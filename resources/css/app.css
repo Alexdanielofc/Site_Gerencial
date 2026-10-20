@@ -5,39 +5,65 @@
 @source '../views/**/*.blade.php';
 
 :root {
-    --site-background: #ffffff;
-    --site-dot: #7ce0ff;
-    --site-gray-800: #1f2937;
-    --site-gray-600: #4b5563;
-    --site-gray-300: #d1d5db;
-    --site-gray-200: #e5e7eb;
-    --site-blue-600: #2563eb;
-    --site-blue-500: #3b82f6;
-    --site-blue-300: #93c5fd;
-    --site-white: #ffffff;
+    --bg: #ffffff;
+    --dot: #7ce0ff;
+    --cin8: #1f2937;
+    --cin6: #4b5563;
+    --cin3: #d1d5db;
+    --cin2: #e5e7eb;
+    --blu6: #2563eb;
+    --blu5: #3b82f6;
+    --blu3: #93c5fd;
+    --branco: #ffffff;
 }
 
 @theme inline {
     --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-    --color-gray-800: var(--site-gray-800);
-    --color-gray-600: var(--site-gray-600);
-    --color-gray-300: var(--site-gray-300);
-    --color-gray-200: var(--site-gray-200);
-    --color-blue-600: var(--site-blue-600);
-    --color-blue-500: var(--site-blue-500);
-    --color-blue-300: var(--site-blue-300);
-    --color-white: var(--site-white);
+    --color-bg: var(--bg);
+    --color-dot: var(--dot);
+    --color-cin8: var(--cin8);
+    --color-cin6: var(--cin6);
+    --color-cin3: var(--cin3);
+    --color-cin2: var(--cin2);
+    --color-blu6: var(--blu6);
+    --color-blu5: var(--blu5);
+    --color-blu3: var(--blu3);
+    --color-branco: var(--branco);
 }
 
 body {
-    color: var(--site-gray-800);
+    color: var(--cin8);
     font-family: 'IBM Plex Sans', sans-serif;
-    background-color: var(--site-background);
-    background-image: radial-gradient(circle, var(--site-dot) 1px, transparent 1px);
+    background-color: var(--bg);
+    background-image: radial-gradient(circle, var(--dot) 1px, transparent 1px);
     background-size: 20px 20px;
 }
 
 .starter-mark {
-    border: 2px solid var(--site-white);
-    box-shadow: 3px 3px 0 var(--site-blue-300);
+    border: 2px solid var(--branco);
+    box-shadow: 3px 3px 0 var(--blu3);
+}
+
+.habit-shadow {
+    border: 2px solid #000;
+    box-shadow: 2px 2px 0 #000;
+}
+
+.habit-shadow-lg {
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  transition: .3s ease;
+}
+.habit-shadow-lg:hover {
+  box-shadow: 0 0 0 #000;
+}
+
+.habit-btn {
+    @apply font-bold py-2 px-4 rounded cursor-pointer;
+    box-shadow: 2px 2px 0 #000;
+    border: 2px solid #000;
+    transition: .3s ease;
+}
+.habit-btn:hover {
+    box-shadow: 0 0 0 #000;
 }
