@@ -2,8 +2,42 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+:root {
+    --site-background: #ffffff;
+    --site-dot: #7ce0ff;
+    --site-gray-800: #1f2937;
+    --site-gray-600: #4b5563;
+    --site-gray-300: #d1d5db;
+    --site-gray-200: #e5e7eb;
+    --site-blue-600: #2563eb;
+    --site-blue-500: #3b82f6;
+    --site-blue-300: #93c5fd;
+    --site-white: #ffffff;
+}
+
+@theme inline {
+    --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --color-gray-800: var(--site-gray-800);
+    --color-gray-600: var(--site-gray-600);
+    --color-gray-300: var(--site-gray-300);
+    --color-gray-200: var(--site-gray-200);
+    --color-blue-600: var(--site-blue-600);
+    --color-blue-500: var(--site-blue-500);
+    --color-blue-300: var(--site-blue-300);
+    --color-white: var(--site-white);
+}
+
+body {
+    color: var(--site-gray-800);
+    font-family: 'IBM Plex Sans', sans-serif;
+    background-color: var(--site-background);
+    background-image: radial-gradient(circle, var(--site-dot) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.starter-mark {
+    border: 2px solid var(--site-white);
+    box-shadow: 3px 3px 0 var(--site-blue-300);
 }

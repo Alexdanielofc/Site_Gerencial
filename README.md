@@ -1,58 +1,75 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Site Gerencial
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplicação local em Laravel preparada para receber, por etapas, os módulos de vendas e metas, notas fiscais de clientes CNPJ e contas a pagar.
 
-## About Laravel
+Nesta etapa existem somente a página inicial, a navegação e páginas indicativas para os módulos. Não há autenticação, cadastros, operações de negócio ou tabelas específicas da papelaria.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tecnologias e dependências
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Versões instaladas no projeto:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP 8.5.
+- Laravel Framework 13.37.
+- Laravel Tinker 3.0.
+- Blade para renderização das páginas.
+- Tailwind CSS 4.3, integrado com `@tailwindcss/vite`.
+- Vite 8.3 e Laravel Vite Plugin 3.2 para compilar os arquivos frontend.
+- Pest 5.3 e Pest Laravel Plugin 5.0 para testes.
+- Laravel Boost 2.10, Pail 1.2 e Pint 1.32 como ferramentas de desenvolvimento.
+- PDO MySQL disponível na instalação PHP verificada.
 
-## Learning Laravel
+Não foram adicionadas dependências nesta etapa. A interface usa CSS/Tailwind e não precisa de JavaScript de aplicação ou biblioteca de ícones.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Executar localmente
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Instale as dependências se ainda não estiverem instaladas:
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```powershell
+composer install
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Em dois terminais, na pasta do projeto, execute:
 
-## Contributing
+```powershell
+php artisan serve
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```powershell
+npm run dev
+```
 
-## Code of Conduct
+Acesse o endereço local informado pelo Artisan, normalmente `http://127.0.0.1:8000`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Para compilar os assets sem manter o servidor do Vite em execução:
 
-## Security Vulnerabilities
+```powershell
+npm run build
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Banco de dados
 
-## License
+O `.env` existente está configurado para SQLite. A configuração Laravel também oferece suporte a MySQL e o PHP possui PDO MySQL, mas o projeto ainda não está usando o servidor MySQL.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Para mudar futuramente para MySQL, primeiro crie um banco vazio pelo MySQL Workbench ou pelo cliente MySQL. Depois, edite localmente no `.env` as variáveis `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD` com os dados do seu ambiente; configure também o cache, as filas e as sessões para não dependerem das tabelas padrão antes de aplicar as migrations. Não compartilhe o `.env` nem publique credenciais.
+
+Após alterar o `.env`, limpe o cache de configuração:
+
+```powershell
+php artisan config:clear
+```
+
+Não há migrations específicas da papelaria. As migrations padrão do Laravel para usuários, cache e filas permanecem no projeto; nenhuma migration foi executada como parte da preparação desta interface.
+
+## Testes
+
+```powershell
+php artisan test --compact
+```
+
+## Rotas iniciais
+
+- `/` — página inicial.
+- `/modulos/vendas` — placeholder de vendas e metas.
+- `/modulos/notas-fiscais` — placeholder de notas fiscais.
+- `/modulos/contas-a-pagar` — placeholder de contas a pagar.
