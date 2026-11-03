@@ -3,6 +3,8 @@
         <a href="{{ route('site.index') }}" class="w-fit font-bold transition-colors hover:text-blu3">
             Site Gerencial
         </a>
-        <p class="text-xs">Laravel · Blade · Tailwind CSS</p>
+        <p class="text-xs">MADE BY
+            <a href="https://alexdanielofc.github.io/" class="w-fit font-bold transition-colors hover:text-blu3">ALEX NUNES</a>
+        </p>
     </div>
 </footer>
