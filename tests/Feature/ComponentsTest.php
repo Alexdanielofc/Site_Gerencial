@@ -72,3 +72,13 @@ it('renders a page header without back link or actions', function () {
         ->assertSee('Contas a pagar')
         ->assertDontSee('Voltar');
 });
+
+it('renders a badge with the correct style and icon for each status', function (string $status, string $expectedClass, string $expectedText) {
+    $this->blade('<x-badge :status="$status" />', ['status' => $status])
+        ->assertSee($expectedClass, false)
+        ->assertSee($expectedText);
+})->with([
+    ['paga', 'border-grn2 bg-grn1 text-grn7', 'Paga'],
+    ['vencida', 'border-red2 bg-red1 text-red7', 'Vencida'],
+    ['pendente', 'border-yel2 bg-yel1 text-yel8', 'Pendente'],
+]);

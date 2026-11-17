@@ -37,5 +37,8 @@ return [
         'customer_name' => 'nome do cliente',
         'customer_cnpj' => 'CNPJ',
         'notes' => 'observações',
+        'description' => 'descrição',
+        'due_date' => 'data de vencimento',
+        'paid_at' => 'data de pagamento',
     ],
 ];

@@ -29,16 +29,13 @@ it('renders the invoices module index page', function () {
         ->assertSee('Site Gerencial');
 });
 
-it('renders placeholder modules for payables', function (string $routeName, string $moduleTitle) {
-    $response = $this->get(route($routeName));
+it('renders the payables module index page', function () {
+    $response = $this->get(route('payables.index'));
 
     $response->assertOk()
-        ->assertSee($moduleTitle)
-        ->assertSee('Esta área será desenvolvida em uma próxima etapa.')
+        ->assertSee('Contas a pagar')
         ->assertSee('Site Gerencial');
-})->with([
-    ['payables.index', 'Contas a pagar'],
-]);
+});
 
 it('does not expose authentication pages', function (string $path) {
     $response = $this->get($path);

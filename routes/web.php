@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PayableController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\SalesExpectationController;
 use Illuminate\Support\Facades\Route;
@@ -41,9 +42,20 @@ Route::prefix('modulos')->group(function (): void {
             ->whereNumber('invoice');
     });
 
-    // ── Contas a pagar (placeholder) ────────────────────────────────────────
-    Route::view('/contas-a-pagar', 'modules.placeholder', [
-        'moduleTitle' => 'Contas a pagar',
-        'moduleDescription' => 'Acompanhe compromissos e pagamentos futuros.',
-    ])->name('payables.index');
+    // ── Contas a pagar ─────────────────────────────────────────────────────
+    Route::prefix('contas-a-pagar')->group(function (): void {
+        // Estáticas antes das dinâmicas
+        Route::get('/avancado', [PayableController::class, 'advanced'])->name('payables.advanced');
+        Route::get('/nova', [PayableController::class, 'create'])->name('payables.create');
+
+        // Dinâmicas e principais
+        Route::get('/', [PayableController::class, 'index'])->name('payables.index');
+        Route::post('/', [PayableController::class, 'store'])->name('payables.store');
+        Route::get('/{payable}/editar', [PayableController::class, 'edit'])->name('payables.edit')
+            ->whereNumber('payable');
+        Route::put('/{payable}', [PayableController::class, 'update'])->name('payables.update')
+            ->whereNumber('payable');
+        Route::post('/{payable}/pagar', [PayableController::class, 'pay'])->name('payables.pay')
+            ->whereNumber('payable');
+    });
 });
