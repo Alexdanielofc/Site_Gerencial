@@ -1,6 +1,6 @@
 <?php
 
-it('renders the stationery management homepage with links to each module', function () {
+it('renders the management homepage with links to each module', function () {
     $response = $this->get('/');
 
     $response->assertOk()
@@ -13,7 +13,15 @@ it('renders the stationery management homepage with links to each module', funct
         ->assertDontSee('Sobre esta etapa');
 });
 
-it('renders each module as a placeholder without business functionality', function (string $routeName, string $moduleTitle) {
+it('renders the sales module index page', function () {
+    $response = $this->get(route('sales.index'));
+
+    $response->assertOk()
+        ->assertSee('Vendas e metas')
+        ->assertSee('Site Gerencial');
+});
+
+it('renders placeholder modules for invoices and payables', function (string $routeName, string $moduleTitle) {
     $response = $this->get(route($routeName));
 
     $response->assertOk()
@@ -21,8 +29,7 @@ it('renders each module as a placeholder without business functionality', functi
         ->assertSee('Esta área será desenvolvida em uma próxima etapa.')
         ->assertSee('Site Gerencial');
 })->with([
-    ['sales.index', 'Vendas e metas'],
-    ['invoices.index', 'Notas fiscais de clientes CNPJ'],
+    ['invoices.index', 'Notas fiscais'],
     ['payables.index', 'Contas a pagar'],
 ]);
 

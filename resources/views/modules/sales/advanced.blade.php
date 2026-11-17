@@ -1,0 +1,107 @@
+<x-layout title="Vendas avançado">
+    <div class="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 sm:px-8 sm:py-10">
+        <x-page-header
+            title="Vendas e metas — Avançado"
+            description="Histórico completo de vendas por mês."
+            :back-href="route('sales.index')"
+            back-label="Voltar a Vendas"
+        />
+
+        {{-- Flash messages --}}
+        @if (session('success'))
+            <x-alert type="success">{{ session('success') }}</x-alert>
+        @endif
+
+        {{-- Pílulas de período --}}
+        <nav aria-label="Selecionar período" class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="w-12 text-sm font-medium text-cin6">Ano</span>
+                @foreach ($years as $item)
+                    <x-pill
+                        :href="route('sales.advanced', ['ano' => $item['year'], 'mes' => $item['month']])"
+                        :selected="$item['year'] === $monthStart->year"
+                    >
+                        {{ $item['year'] }}
+                    </x-pill>
+                @endforeach
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="w-12 text-sm font-medium text-cin6">Mês</span>
+                @foreach ($months as $item)
+                    <x-pill
+                        :href="route('sales.advanced', ['ano' => $monthStart->year, 'mes' => $item['month']])"
+                        :selected="$item['month'] === $monthStart->month"
+                    >
+                        {{ $item['label'] }}
+                    </x-pill>
+                @endforeach
+            </div>
+        </nav>
+
+        {{-- Indicadores do período --}}
+        @if ($indicators['is_current_month'])
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <x-stat label="Total vendido" :value="\App\Support\Money::format($indicators['sold_cents'])" tone="blue" />
+                <x-stat label="Meta completa do mês" :value="\App\Support\Money::format($indicators['full_goal_cents'])" tone="neutral" />
+                <x-stat
+                    label="% da meta mensal"
+                    :value="\App\Support\Money::formatPercent(\App\Support\Money::percentOf($indicators['sold_cents'], $indicators['full_goal_cents']))"
+                    :tone="\App\Support\Money::percentOf($indicators['sold_cents'], $indicators['full_goal_cents']) === null ? 'neutral' : (\App\Support\Money::percentOf($indicators['sold_cents'], $indicators['full_goal_cents']) >= 100 ? 'green' : 'blue')"
+                />
+            </div>
+        @else
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <x-stat label="Total vendido" :value="\App\Support\Money::format($indicators['sold_cents'])" tone="blue" />
+                <x-stat label="Meta completa do mês" :value="\App\Support\Money::format($indicators['full_goal_cents'])" tone="neutral" />
+                <x-stat
+                    label="% da meta mensal"
+                    :value="\App\Support\Money::formatPercent($indicators['full_percent'])"
+                    :tone="$indicators['full_percent_tone']"
+                />
+            </div>
+        @endif
+
+        {{-- Tabela de dias do mês --}}
+        <x-card size="none">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-cin1 text-left text-xs font-semibold uppercase tracking-wide text-cin6">
+                            <th class="px-5 py-3">Data</th>
+                            <th class="px-5 py-3">Dia da semana</th>
+                            <th class="px-5 py-3 text-right">Valor vendido</th>
+                            <th class="px-5 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-cin2">
+                        @foreach ($days as $day)
+                            <tr class="{{ $day['is_future'] ? 'opacity-50' : 'hover:bg-cin1' }}">
+                                <td class="px-5 py-3 tabular-nums text-cin8">{{ $day['label'] }}</td>
+                                <td class="px-5 py-3 text-cin6">{{ $day['weekday'] }}</td>
+                                <td class="px-5 py-3 text-right tabular-nums">
+                                    @if ($day['has_record'])
+                                        <span class="font-medium">{{ \App\Support\Money::format($day['amount']) }}</span>
+                                    @else
+                                        <span class="text-cin6">{{ \App\Support\Money::format(0) }}</span>
+                                        <span class="ml-2 text-xs text-cin6">sem registro</span>
+                                    @endif
+                                </td>
+                                <td class="px-5 py-3 text-right">
+                                    @if (! $day['is_future'])
+                                        <a
+                                            href="{{ route('sales.edit', ['date' => $day['date'], 'origem' => 'advanced', 'ano' => $monthStart->year, 'mes' => $monthStart->month]) }}"
+                                            class="inline-flex items-center gap-1 text-sm font-medium text-blu6 transition-colors hover:text-blu5"
+                                        >
+                                            <x-icons.pencil /> EDITAR
+                                        </a>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </x-card>
+    </div>
+</x-layout>

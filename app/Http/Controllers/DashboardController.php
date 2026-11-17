@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 use App\Http\Requests\PeriodRequest;
 use App\Models\DailySale;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -18,7 +17,7 @@ class DashboardController extends Controller
 
         $monthsByYear = DailySale::periodsWithRecords()
             ->push(['year' => now()->year, 'month' => now()->month])
-            ->unique(fn (array $period) => $period['year'] . '-' . $period['month'])
+            ->unique(fn (array $period) => $period['year'].'-'.$period['month'])
             ->groupBy('year')
             ->map(fn (Collection $periods) => $periods->pluck('month')->sort()->values())
             ->sortKeys();

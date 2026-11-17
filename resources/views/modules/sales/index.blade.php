@@ -1,0 +1,129 @@
+<x-layout title="Vendas e metas">
+    <div class="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 sm:px-8 sm:py-10">
+        <x-page-header
+            title="Vendas e metas"
+            description="Acompanhe as vendas do dia e o progresso das metas."
+            :back-href="route('site.index')"
+            back-label="Voltar ao início"
+        >
+            <x-slot:actions>
+                <x-button variant="primary" :href="route('sales.expectations.edit')">EXPECTATIVA DE VENDA MÊS</x-button>
+                <x-button variant="secondary" :href="route('sales.advanced')">AVANÇADO</x-button>
+            </x-slot:actions>
+        </x-page-header>
+
+        {{-- Flash messages --}}
+        @if (session('success'))
+            <x-alert type="success">{{ session('success') }}</x-alert>
+        @endif
+        @if (session('error'))
+            <x-alert type="danger">{{ session('error') }}</x-alert>
+        @endif
+        @if ($errors->any())
+            <x-alert type="danger" title="Verifique os campos">
+                <ul class="mt-1 list-disc pl-4">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </x-alert>
+        @endif
+
+        {{-- Card central --}}
+        <x-card size="lg" class="mx-auto w-full max-w-2xl">
+            <div class="flex flex-col gap-6">
+
+                {{-- Data e dia da semana --}}
+                <div class="flex items-center gap-3">
+                    <span class="shrink-0 text-cin6"><x-icons.calendar /></span>
+                    <div>
+                        <p class="text-lg font-semibold">{{ $today->format('d/m/Y') }}</p>
+                        <p class="text-sm text-cin6">{{ Str::ucfirst($today->translatedFormat('l')) }}</p>
+                    </div>
+                </div>
+
+                <hr class="border-cin2">
+
+                {{-- Venda de hoje --}}
+                @if ($todaySale)
+                    <div class="flex flex-col gap-3">
+                        <x-alert type="success" title="Registro de hoje já adicionado.">
+                            Valor registrado: <strong>{{ \App\Support\Money::format((int) round($todaySale->amount * 100)) }}</strong>
+                        </x-alert>
+                        <div>
+                            <x-button
+                                variant="secondary"
+                                :href="route('sales.edit', ['date' => $today->toDateString(), 'origem' => 'index'])"
+                            >
+                                <x-icons.pencil /> EDITAR
+                            </x-button>
+                        </div>
+                    </div>
+                @else
+                    <form method="POST" action="{{ route('sales.store') }}" novalidate>
+                        @csrf
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-col gap-1.5">
+                                <label for="amount" class="text-sm font-medium text-cin8">Venda diária (R$)</label>
+                                <input
+                                    id="amount"
+                                    name="amount"
+                                    type="text"
+                                    inputmode="decimal"
+                                    autocomplete="off"
+                                    class="rounded-lg border border-cin3 px-3 py-2.5 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('amount') border-red6 @enderror"
+                                    placeholder="0,00"
+                                    value="{{ old('amount') }}"
+                                    aria-describedby="{{ $errors->has('amount') ? 'amount-error' : '' }}"
+                                >
+                                @error('amount')
+                                    <p id="amount-error" class="text-sm text-red6" role="alert">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <x-button type="submit">Salvar</x-button>
+                            </div>
+                        </div>
+                    </form>
+                @endif
+
+                <hr class="border-cin2">
+
+                {{-- Expectativa de hoje --}}
+                @if ($todayExpectation && $todayExpectation->amount > 0)
+                    <div class="flex items-center justify-between gap-4 text-sm">
+                        <span class="text-cin6">Expectativa de hoje</span>
+                        <span class="font-semibold tabular-nums">{{ \App\Support\Money::format((int) round($todayExpectation->amount * 100)) }}</span>
+                    </div>
+                @else
+                    <x-alert type="danger" title="DIA SEM EXPECTATIVA">
+                        Nenhuma expectativa definida para hoje.
+                        <a href="{{ route('sales.expectations.edit') }}" class="font-medium underline hover:no-underline">Definir expectativas do mês</a>
+                    </x-alert>
+                @endif
+
+                <hr class="border-cin2">
+
+                {{-- Indicadores do mês --}}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <x-stat
+                        label="Vendido no mês"
+                        :value="\App\Support\Money::format($indicators['sold_cents'])"
+                        tone="blue"
+                    />
+                    <x-stat
+                        label="Meta acumulada até hoje"
+                        :value="\App\Support\Money::format($indicators['accrued_goal_cents'])"
+                        tone="neutral"
+                    />
+                    <x-stat
+                        label="% da meta acumulada"
+                        :value="\App\Support\Money::formatPercent($indicators['accrued_percent'])"
+                        :tone="$indicators['accrued_percent_tone']"
+                    />
+                </div>
+
+            </div>
+        </x-card>
+    </div>
+</x-layout>
