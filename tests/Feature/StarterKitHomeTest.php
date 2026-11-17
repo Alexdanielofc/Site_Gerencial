@@ -21,7 +21,15 @@ it('renders the sales module index page', function () {
         ->assertSee('Site Gerencial');
 });
 
-it('renders placeholder modules for invoices and payables', function (string $routeName, string $moduleTitle) {
+it('renders the invoices module index page', function () {
+    $response = $this->get(route('invoices.index'));
+
+    $response->assertOk()
+        ->assertSee('Notas fiscais')
+        ->assertSee('Site Gerencial');
+});
+
+it('renders placeholder modules for payables', function (string $routeName, string $moduleTitle) {
     $response = $this->get(route($routeName));
 
     $response->assertOk()
@@ -29,7 +37,6 @@ it('renders placeholder modules for invoices and payables', function (string $ro
         ->assertSee('Esta área será desenvolvida em uma próxima etapa.')
         ->assertSee('Site Gerencial');
 })->with([
-    ['invoices.index', 'Notas fiscais'],
     ['payables.index', 'Contas a pagar'],
 ]);
 

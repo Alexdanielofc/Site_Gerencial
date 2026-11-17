@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\SalesExpectationController;
 use Illuminate\Support\Facades\Route;
@@ -25,11 +26,20 @@ Route::prefix('modulos')->group(function (): void {
             ->where('date', '\d{4}-\d{2}-\d{2}');
     });
 
-    // ── Notas fiscais (placeholder) ─────────────────────────────────────────
-    Route::view('/notas-fiscais', 'modules.placeholder', [
-        'moduleTitle' => 'Notas fiscais',
-        'moduleDescription' => 'Organize as notas emitidas para clientes e acompanhe os valores.',
-    ])->name('invoices.index');
+    // ── Notas fiscais ──────────────────────────────────────────────────────
+    Route::prefix('notas-fiscais')->group(function (): void {
+        // Estáticas antes das dinâmicas
+        Route::get('/avancado', [InvoiceController::class, 'advanced'])->name('invoices.advanced');
+        Route::get('/nova', [InvoiceController::class, 'create'])->name('invoices.create');
+
+        // Dinâmicas e principais
+        Route::get('/', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::post('/', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/{invoice}/editar', [InvoiceController::class, 'edit'])->name('invoices.edit')
+            ->whereNumber('invoice');
+        Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update')
+            ->whereNumber('invoice');
+    });
 
     // ── Contas a pagar (placeholder) ────────────────────────────────────────
     Route::view('/contas-a-pagar', 'modules.placeholder', [

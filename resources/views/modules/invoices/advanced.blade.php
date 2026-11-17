@@ -1,0 +1,154 @@
+<x-layout title="Notas fiscais — Avançado">
+    <div class="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 sm:px-8 sm:py-10">
+        <x-page-header
+            title="Notas fiscais — Avançado"
+            description="Histórico completo e consulta de notas fiscais por período."
+            :back-href="route('invoices.index')"
+            back-label="Voltar a Notas fiscais"
+        >
+            <x-slot:actions>
+                <x-button variant="primary" :href="route('invoices.create')">Nova nota</x-button>
+            </x-slot:actions>
+        </x-page-header>
+
+        {{-- Flash messages --}}
+        @if (session('success'))
+            <x-alert type="success">{{ session('success') }}</x-alert>
+        @endif
+
+        {{-- Pílulas de período --}}
+        <nav aria-label="Selecionar período" class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="w-12 text-sm font-medium text-cin6">Ano</span>
+                @foreach ($years as $item)
+                    <x-pill
+                        :href="route('invoices.advanced', array_filter(['ano' => $item['year'], 'mes' => $item['month'], 'busca' => $search]))"
+                        :selected="$item['year'] === $monthStart->year"
+                    >
+                        {{ $item['year'] }}
+                    </x-pill>
+                @endforeach
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="w-12 text-sm font-medium text-cin6">Mês</span>
+                @foreach ($months as $item)
+                    <x-pill
+                        :href="route('invoices.advanced', array_filter(['ano' => $monthStart->year, 'mes' => $item['month'], 'busca' => $search]))"
+                        :selected="$item['month'] === $monthStart->month"
+                    >
+                        {{ $item['label'] }}
+                    </x-pill>
+                @endforeach
+            </div>
+        </nav>
+
+        {{-- Indicadores do período --}}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <x-stat
+                label="Quantidade de notas"
+                :value="(string) $periodCount"
+                tone="neutral"
+            />
+            <x-stat
+                label="Valor total emitido"
+                :value="\App\Support\Money::format($periodTotalCents)"
+                tone="blue"
+            />
+            <x-stat
+                label="Ticket médio"
+                :value="\App\Support\Money::format($averageTicket)"
+                tone="neutral"
+            />
+        </div>
+
+        {{-- Barra de busca --}}
+        <form method="GET" action="{{ route('invoices.advanced') }}" class="flex flex-wrap items-center gap-3">
+            <input type="hidden" name="ano" value="{{ $monthStart->year }}">
+            <input type="hidden" name="mes" value="{{ $monthStart->month }}">
+
+            <div class="relative flex-1 min-w-[240px]">
+                <input
+                    type="search"
+                    name="busca"
+                    value="{{ $search }}"
+                    placeholder="Buscar por cliente ou número da nota..."
+                    class="w-full rounded-lg border border-cin3 px-3 py-2 text-sm text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6"
+                >
+            </div>
+            <x-button type="submit" variant="secondary">Buscar</x-button>
+            @if ($search !== '')
+                <a
+                    href="{{ route('invoices.advanced', ['ano' => $monthStart->year, 'mes' => $monthStart->month]) }}"
+                    class="text-sm font-medium text-cin6 hover:text-cin8"
+                >
+                    Limpar busca
+                </a>
+            @endif
+        </form>
+
+        {{-- Tabela de notas fiscais --}}
+        @if ($invoices->isEmpty())
+            <x-empty-state
+                title="Nenhuma nota fiscal encontrada"
+                :description="$search !== '' ? 'Nenhum resultado corresponde à busca informada neste período.' : 'Não há notas fiscais cadastradas para o período selecionado.'"
+            >
+                <x-button variant="primary" :href="route('invoices.create')">Registrar primeira nota</x-button>
+            </x-empty-state>
+        @else
+            <x-card size="none">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-cin1 text-left text-xs font-semibold uppercase tracking-wide text-cin6">
+                                <th class="px-5 py-3">Data</th>
+                                <th class="px-5 py-3">Número</th>
+                                <th class="px-5 py-3">Cliente</th>
+                                <th class="px-5 py-3">CNPJ</th>
+                                <th class="px-5 py-3 text-right">Valor</th>
+                                <th class="px-5 py-3 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-cin2">
+                            @foreach ($invoices as $invoice)
+                                <tr class="hover:bg-cin1">
+                                    <td class="px-5 py-3 tabular-nums text-cin8">
+                                        {{ $invoice->issue_date->format('d/m/Y') }}
+                                    </td>
+                                    <td class="px-5 py-3 font-medium text-cin8">
+                                        {{ $invoice->invoice_number ?: '—' }}
+                                    </td>
+                                    <td class="px-5 py-3 text-cin8">
+                                        {{ $invoice->customer_name }}
+                                        @if ($invoice->notes)
+                                            <p class="text-xs text-cin6">{{ $invoice->notes }}</p>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-3 tabular-nums text-cin6">
+                                        {{ $invoice->formatted_cnpj ?: '—' }}
+                                    </td>
+                                    <td class="px-5 py-3 text-right font-semibold tabular-nums text-cin8">
+                                        {{ \App\Support\Money::format((int) round($invoice->amount * 100)) }}
+                                    </td>
+                                    <td class="px-5 py-3 text-right">
+                                        <a
+                                            href="{{ route('invoices.edit', ['invoice' => $invoice->id, 'origem' => 'advanced']) }}"
+                                            class="inline-flex items-center gap-1 text-sm font-medium text-blu6 transition-colors hover:text-blu5"
+                                        >
+                                            <x-icons.pencil /> EDITAR
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </x-card>
+
+            {{-- Paginação --}}
+            <div class="mt-2">
+                {{ $invoices->links() }}
+            </div>
+        @endif
+    </div>
+</x-layout>

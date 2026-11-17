@@ -32,5 +32,10 @@ return [
         'sale_date' => 'data da venda',
         'amount.*' => 'valor',
         'expectations' => 'expectativas',
+        'issue_date' => 'data de emissão',
+        'invoice_number' => 'número da nota fiscal',
+        'customer_name' => 'nome do cliente',
+        'customer_cnpj' => 'CNPJ',
+        'notes' => 'observações',
     ],
 ];
