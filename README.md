@@ -1,75 +1,109 @@
 # Site Gerencial
 
-Aplicação local em Laravel preparada para receber, por etapas, os módulos de vendas e metas, notas fiscais de clientes CNPJ e contas a pagar.
+Sistema local de gestão empresarial para operação diária, sem necessidade de login, projetado para execução local em computador único.
 
-Nesta etapa existem somente a página inicial, a navegação e páginas indicativas para os módulos. Não há autenticação, cadastros, operações de negócio ou tabelas específicas da papelaria.
+## Módulos do Sistema
 
-## Tecnologias e dependências
+1. **Dashboard (`/`)**: Painel central integrado com seletor de período dinâmico, visão consolidada de vendas, notas fiscais, contas a pagar e bloco de atenção com contas vencidas e próximos vencimentos.
+2. **Vendas e Metas (`/modulos/vendas`)**:
+   - Registro de venda do dia com prevenção de duplicação.
+   - Comparativo com meta acumulada e expectativa diária.
+   - Gestão de expectativas do mês em lote (`/modulos/vendas/expectativas`).
+   - Visão avançada mensal com histórico diário (`/modulos/vendas/avancado`).
+3. **Notas Fiscais (`/modulos/notas-fiscais`)**:
+   - Cadastro ágil de notas emitidas com data, número, cliente, CNPJ e valor.
+   - Listagem e edição das notas emitidas no dia.
+   - Consulta analítica avançada com busca e ticket médio (`/modulos/notas-fiscais/avancado`).
+4. **Contas a Pagar (`/modulos/contas-a-pagar`)**:
+   - Cadastro e acompanhamento de compromissos financeiros.
+   - Seção "Em atenção" com contas vencidas e a vencer nos próximos 7 dias.
+   - Quitação rápida com 1 clique ("Marcar como paga").
+   - Consulta avançada com filtros por situação (todas, pagas, pendentes, vencidas) e busca (`/modulos/contas-a-pagar/avancado`).
 
-Versões instaladas no projeto:
+---
 
-- PHP 8.5.
-- Laravel Framework 13.37.
-- Laravel Tinker 3.0.
-- Blade para renderização das páginas.
-- Tailwind CSS 4.3, integrado com `@tailwindcss/vite`.
-- Vite 8.3 e Laravel Vite Plugin 3.2 para compilar os arquivos frontend.
-- Pest 5.3 e Pest Laravel Plugin 5.0 para testes.
-- Laravel Boost 2.10, Pail 1.2 e Pint 1.32 como ferramentas de desenvolvimento.
-- PDO MySQL disponível na instalação PHP verificada.
+## Como Executar Localmente
 
-Não foram adicionadas dependências nesta etapa. A interface usa CSS/Tailwind e não precisa de JavaScript de aplicação ou biblioteca de ícones.
+### Método 1: Inicialização Rápida (Recomendado no Windows)
+Basta dar dois cliques no arquivo:
+```cmd
+iniciar.bat
+```
+Ele verifica o status do serviço MySQL, abre o navegador padrão em `http://127.0.0.1:8000` e inicia o servidor local.
 
-## Executar localmente
-
-Instale as dependências se ainda não estiverem instaladas:
-
+### Método 2: Execução Manual por Linha de Comando
+Instale as dependências caso ainda não o tenha feito:
 ```powershell
 composer install
 npm install
-```
-
-Em dois terminais, na pasta do projeto, execute:
-
-```powershell
-php artisan serve
-```
-
-```powershell
-npm run dev
-```
-
-Acesse o endereço local informado pelo Artisan, normalmente `http://127.0.0.1:8000`.
-
-Para compilar os assets sem manter o servidor do Vite em execução:
-
-```powershell
 npm run build
 ```
 
-## Banco de dados
-
-O `.env` existente está configurado para SQLite. A configuração Laravel também oferece suporte a MySQL e o PHP possui PDO MySQL, mas o projeto ainda não está usando o servidor MySQL.
-
-Para mudar futuramente para MySQL, primeiro crie um banco vazio pelo MySQL Workbench ou pelo cliente MySQL. Depois, edite localmente no `.env` as variáveis `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD` com os dados do seu ambiente; configure também o cache, as filas e as sessões para não dependerem das tabelas padrão antes de aplicar as migrations. Não compartilhe o `.env` nem publique credenciais.
-
-Após alterar o `.env`, limpe o cache de configuração:
-
+Inicie o servidor do Laravel:
 ```powershell
-php artisan config:clear
+php artisan serve --host=127.0.0.1 --port=8000
+```
+Acesse `http://127.0.0.1:8000` no seu navegador.
+
+---
+
+## Backup e Restauração do Banco de Dados
+
+> [!IMPORTANT]
+> Copiar apenas os arquivos da aplicação **NÃO** preserva os dados cadastrados. Os dados residem no banco de dados MySQL `site_gerencial` e exigem dump para backup efetivo.
+
+### Gerar Backup
+Dê dois cliques no script:
+```cmd
+backup.bat
+```
+O script gera um arquivo SQL em `backups/site_gerencial_AAAA-MM-DD_HHMM.sql` utilizando credenciais salvas de forma segura fora do repositório (`%USERPROFILE%\.site_gerencial_mysql.cnf`).
+
+### Restaurar Backup
+Para restaurar um backup existente em caso de necessidade:
+```cmd
+mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" site_gerencial < backups\site_gerencial_AAAA-MM-DD_HHMM.sql
 ```
 
-Não há migrations específicas da papelaria. As migrations padrão do Laravel para usuários, cache e filas permanecem no projeto; nenhuma migration foi executada como parte da preparação desta interface.
+---
 
-## Testes
+## Execução em Produção Local
+Para rodar em modo produção local de alto desempenho:
+1. Ajuste no `.env`:
+   ```env
+   APP_ENV=production
+   APP_DEBUG=false
+   ```
+2. Compile os assets e gere o cache do Laravel:
+   ```powershell
+   npm run build
+   php artisan config:cache
+   php artisan route:cache
+   php artisan view:cache
+   ```
+3. Caso realize alterações no `.env` posteriormente, limpe os caches com:
+   ```powershell
+   php artisan config:clear
+   ```
+
+---
+
+## Testes Automatizados
+
+A aplicação conta com suíte completa de testes de funcionalidades e regras de negócio via Pest:
 
 ```powershell
 php artisan test --compact
 ```
 
-## Rotas iniciais
+---
 
-- `/` — página inicial.
-- `/modulos/vendas` — placeholder de vendas e metas.
-- `/modulos/notas-fiscais` — placeholder de notas fiscais.
-- `/modulos/contas-a-pagar` — placeholder de contas a pagar.
+## Pontos de Personalização (White Label)
+
+O sistema foi desenvolvido como produto white label. Para personalizar para a empresa final, consulte os pontos mapeados abaixo:
+
+1. **Subtítulo e Iniciais do Cabeçalho**: `resources/views/components/header.blade.php` (marcador `Empresa` e monograma `SG`).
+2. **Sufixo do Título das Páginas**: `resources/views/components/layout.blade.php` (`<title>{{ $title }} | Site Gerencial</title>`).
+3. **Crédito do Rodapé**: `resources/views/components/footer.blade.php`.
+4. **Paleta de Cores e Tokens Visuais**: `resources/css/app.css` (variáveis CSS dentro de `:root` e `@theme inline`).
+5. **Nome da Aplicação**: Variável `APP_NAME` no arquivo `.env`.
