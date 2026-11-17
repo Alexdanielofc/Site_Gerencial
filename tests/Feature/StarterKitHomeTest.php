@@ -5,7 +5,7 @@ it('renders the management homepage with links to each module', function () {
 
     $response->assertOk()
         ->assertSee('Site Gerencial')
-        ->assertSee('Módulos do sistema')
+        ->assertSee('Painel de controle')
         ->assertSee(route('sales.index'))
         ->assertSee(route('invoices.index'))
         ->assertSee(route('payables.index'))
