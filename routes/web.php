@@ -1,8 +1,9 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'index')->name('site.index');
+Route::get('/', [DashboardController::class, 'index'])->name('site.index');
 
 Route::prefix('modulos')->group(function (): void {
     Route::view('/vendas', 'modules.placeholder', [

@@ -57,3 +57,18 @@ it('renders an empty state with title, description and action', function () {
         ->assertSee('Ainda não há registros.')
         ->assertSee('Criar');
 });
+
+it('renders a page header with back link, description and actions', function () {
+    $this->blade('<x-page-header title="Vendas e metas" description="Resumo do módulo." back-href="/" back-label="Voltar ao início"><x-slot:actions><a href="/avancado">Avançado</a></x-slot:actions></x-page-header>')
+        ->assertSee('Vendas e metas')
+        ->assertSee('Resumo do módulo.')
+        ->assertSee('Voltar ao início')
+        ->assertSee('href="/"', false)
+        ->assertSee('Avançado');
+});
+
+it('renders a page header without back link or actions', function () {
+    $this->blade('<x-page-header title="Contas a pagar" />')
+        ->assertSee('Contas a pagar')
+        ->assertDontSee('Voltar');
+});
