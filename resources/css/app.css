@@ -39,6 +39,14 @@
     --yel2: #fde68a;
     --yel6: #d97706;
     --yel8: #92400e;
+    /* Tokens semânticos */
+    --surface: #ffffff;
+    --surface-2: #f9fafb;
+    --line: #d1d5db;
+    --ink: #1f2937;
+    --ink-soft: #4b5563;
+    --accent: #2563eb;
+    --chrome: #1f2937;
 }
 
 @theme inline {
@@ -68,6 +76,14 @@
     --color-yel2: var(--yel2);
     --color-yel6: var(--yel6);
     --color-yel8: var(--yel8);
+    /* Tokens semânticos */
+    --color-surface: var(--surface);
+    --color-surface-2: var(--surface-2);
+    --color-line: var(--line);
+    --color-ink: var(--ink);
+    --color-ink-soft: var(--ink-soft);
+    --color-accent: var(--accent);
+    --color-chrome: var(--chrome);
 }
 
 body {
@@ -78,9 +94,79 @@ body {
     background-size: 20px 20px;
 }
 
+@layer base {
+    input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([type='hidden']),
+    select,
+    textarea {
+        background-color: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--ink);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([type='hidden'])::placeholder,
+    select::placeholder,
+    textarea::placeholder {
+        color: var(--ink-soft);
+    }
+
+    input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([type='hidden']):focus,
+    select:focus,
+    textarea:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    input:not([type='checkbox']):not([type='radio']):not([type='submit']):not([type='button']):not([type='hidden']):disabled,
+    select:disabled,
+    textarea:disabled {
+        background-color: var(--surface-2);
+    }
+}
+
 .starter-mark {
     border: 2px solid var(--branco);
     box-shadow: 3px 3px 0 var(--blu3);
 }
 
+html[data-theme='dark'] {
+    color-scheme: dark;
+
+    /* Fundos */
+    --bg: #0b1220;
+    --dot: #1b2c47;
+
+    /* Tokens semânticos */
+    --surface: #111a2e;
+    --surface-2: #16213a;
+    --line: #26344f;
+    --ink: #e6edf7;
+    --ink-soft: #9fb0c8;
+    --accent: #93c5fd;
+    --chrome: #070d19;
+
+    /* Tokens legados (mantém bg-cin1, text-cin6, text-cin8 etc. funcionando) */
+    --cin8: #e6edf7;
+    --cin6: #9fb0c8;
+    --cin3: #26344f;
+    --cin2: #26344f;
+    --cin1: #16213a;
+    --branco: #111a2e;
+
+    /* Azuis de marca — mantém bg-blu6 intacto no modo escuro */
+    --blu1: #0f1f3d;
+    --blu3: #93c5fd;
+
+    /* Status no escuro */
+    --grn1: #0d2a1b;
+    --grn2: #14532d;
+    --grn7: #86efac;
+    --red1: #2d1215;
+    --red2: #7f1d1d;
+    --red7: #fca5a5;
+    --yel1: #2b2210;
+    --yel2: #854d0e;
+    --yel8: #fde68a;
+}
 

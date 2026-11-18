@@ -4,15 +4,15 @@
         {{-- Cabeçalho do Período e Seletor de Ano e Mês --}}
         <header class="flex flex-col gap-4">
             <div class="flex flex-col gap-1">
-                <span class="text-sm font-medium text-blu6">Painel de controle</span>
-                <h1 class="text-2xl font-semibold tracking-tight text-cin8 sm:text-3xl first-letter:uppercase">
+                <span class="text-sm font-medium text-accent">Painel de controle</span>
+                <h1 class="text-2xl font-semibold tracking-tight text-ink sm:text-3xl first-letter:uppercase">
                     {{ $monthStart->translatedFormat('F \d\e Y') }}
                 </h1>
             </div>
 
             <nav aria-label="Selecionar período" class="flex flex-col gap-3">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="w-12 text-sm font-medium text-cin6">Ano</span>
+                    <span class="w-12 text-sm font-medium text-ink-soft">Ano</span>
                     @foreach ($years as $item)
                         <x-pill
                             :href="route('site.index', ['ano' => $item['year'], 'mes' => $item['month']])"
@@ -24,7 +24,7 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="w-12 text-sm font-medium text-cin6">Mês</span>
+                    <span class="w-12 text-sm font-medium text-ink-soft">Mês</span>
                     @foreach ($months as $item)
                         <x-pill
                             :href="route('site.index', ['ano' => $monthStart->year, 'mes' => $item['month']])"
@@ -45,8 +45,8 @@
                 <x-card size="lg" class="flex flex-col gap-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex flex-col gap-1">
-                            <h2 id="sales-section-heading" class="text-lg font-semibold text-cin8">Vendas e metas</h2>
-                            <p class="text-sm text-cin6">Registro diário e acompanhamento das expectativas de vendas.</p>
+                            <h2 id="sales-section-heading" class="text-lg font-semibold text-ink">Vendas e metas</h2>
+                            <p class="text-sm text-ink-soft">Registro diário e acompanhamento das expectativas de vendas.</p>
                         </div>
                         <x-button variant="secondary" :href="route('sales.index')">
                             Abrir módulo <x-icons.arrow-right />
@@ -73,21 +73,21 @@
                         </div>
 
                         {{-- Indicadores do dia atual --}}
-                        <div class="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-cin2 bg-cin1 p-4 text-sm">
+                        <div class="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line bg-surface-2 p-4 text-sm">
                             <div class="flex items-center gap-2">
-                                <span class="font-medium text-cin8">Hoje:</span>
+                                <span class="font-medium text-ink">Hoje:</span>
                                 @if ($salesIndicators['today_sale_cents'] !== null)
-                                    <span class="font-semibold text-blu6">
+                                    <span class="font-semibold text-accent">
                                         {{ \App\Support\Money::format($salesIndicators['today_sale_cents']) }}
                                     </span>
                                 @else
-                                    <span class="text-cin6">Sem registro hoje</span>
+                                    <span class="text-ink-soft">Sem registro hoje</span>
                                 @endif
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-cin6">Expectativa de hoje:</span>
+                                <span class="text-ink-soft">Expectativa de hoje:</span>
                                 @if ($salesIndicators['today_expectation_cents'] !== null && $salesIndicators['today_expectation_cents'] > 0)
-                                    <span class="font-semibold text-cin8">
+                                    <span class="font-semibold text-ink">
                                         {{ \App\Support\Money::format($salesIndicators['today_expectation_cents']) }}
                                     </span>
                                 @else
@@ -122,8 +122,8 @@
                 <x-card size="lg" class="flex flex-col gap-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex flex-col gap-1">
-                            <h2 id="invoices-section-heading" class="text-lg font-semibold text-cin8">Notas fiscais</h2>
-                            <p class="text-sm text-cin6">Organização de notas emitidas para clientes e faturamento.</p>
+                            <h2 id="invoices-section-heading" class="text-lg font-semibold text-ink">Notas fiscais</h2>
+                            <p class="text-sm text-ink-soft">Organização de notas emitidas para clientes e faturamento.</p>
                         </div>
                         <x-button variant="secondary" :href="route('invoices.index')">
                             Abrir módulo <x-icons.arrow-right />
@@ -165,8 +165,8 @@
                 <x-card size="lg" class="flex flex-col gap-6">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex flex-col gap-1">
-                            <h2 id="payables-section-heading" class="text-lg font-semibold text-cin8">Contas a pagar</h2>
-                            <p class="text-sm text-cin6">Acompanhamento de vencimentos e compromissos financeiros.</p>
+                            <h2 id="payables-section-heading" class="text-lg font-semibold text-ink">Contas a pagar</h2>
+                            <p class="text-sm text-ink-soft">Acompanhamento de vencimentos e compromissos financeiros.</p>
                         </div>
                         <x-button variant="secondary" :href="route('payables.index')">
                             Abrir módulo <x-icons.arrow-right />
@@ -175,7 +175,7 @@
 
                     {{-- Resumo do Período Selecionado --}}
                     <div>
-                        <h3 class="mb-3 text-xs font-semibold uppercase tracking-wider text-cin6">
+                        <h3 class="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-soft">
                             Resumo do período ({{ $monthStart->translatedFormat('F/Y') }})
                         </h3>
 
@@ -206,45 +206,45 @@
                     </div>
 
                     {{-- Bloco Atenção (Independente do período) --}}
-                    <div class="flex flex-col gap-4 border-t border-cin2 pt-6">
+                    <div class="flex flex-col gap-4 border-t border-line pt-6">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h3 class="text-sm font-semibold uppercase tracking-wider text-cin8">
+                            <h3 class="text-sm font-semibold uppercase tracking-wider text-ink">
                                 Bloco Atenção (Visão Imediata)
                             </h3>
-                            <span class="text-xs text-cin6">Independente do mês selecionado</span>
+                            <span class="text-xs text-ink-soft">Independente do mês selecionado</span>
                         </div>
 
                         {{-- Card de Vencidas --}}
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div class="rounded-xl border {{ $overdueCount > 0 ? 'border-red2 bg-red1/30' : 'border-cin2 bg-cin1' }} p-5">
-                                <p class="text-xs font-semibold uppercase tracking-wide {{ $overdueCount > 0 ? 'text-red7' : 'text-cin6' }}">
+                            <div class="rounded-xl border {{ $overdueCount > 0 ? 'border-red2 bg-red1/30' : 'border-line bg-surface-2' }} p-5">
+                                <p class="text-xs font-semibold uppercase tracking-wide {{ $overdueCount > 0 ? 'text-red7' : 'text-ink-soft' }}">
                                     Contas vencidas em aberto
                                 </p>
-                                <p class="mt-2 text-2xl font-bold tabular-nums {{ $overdueCount > 0 ? 'text-red6' : 'text-cin8' }}">
+                                <p class="mt-2 text-2xl font-bold tabular-nums {{ $overdueCount > 0 ? 'text-red6' : 'text-ink' }}">
                                     {{ \App\Support\Money::format($overdueTotalCents) }}
                                 </p>
-                                <p class="mt-1 text-xs text-cin6">
+                                <p class="mt-1 text-xs text-ink-soft">
                                     {{ $overdueCount === 0 ? 'Nenhuma conta vencida.' : $overdueCount . ' ' . ($overdueCount === 1 ? 'conta vencida necessita pagamento.' : 'contas vencidas necessitam pagamento.') }}
                                 </p>
                             </div>
 
                             {{-- Próximos Vencimentos (até 5 contas nos próximos 7 dias) --}}
-                            <div class="rounded-xl border border-cin2 bg-branco p-5">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-cin6">
+                            <div class="rounded-xl border border-line bg-surface p-5">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-ink-soft">
                                     Próximos vencimentos (próximos 7 dias)
                                 </p>
 
                                 @if ($upcomingPayables->isEmpty())
-                                    <p class="mt-3 text-sm text-cin6">Nenhuma conta com vencimento nos próximos 7 dias.</p>
+                                    <p class="mt-3 text-sm text-ink-soft">Nenhuma conta com vencimento nos próximos 7 dias.</p>
                                 @else
                                     <ul class="mt-3 divide-y divide-cin2 text-sm">
                                         @foreach ($upcomingPayables as $payable)
                                             <li class="flex items-center justify-between py-2 text-xs">
                                                 <div class="flex flex-col">
-                                                    <span class="font-medium text-cin8">{{ $payable->description }}</span>
-                                                    <span class="text-cin6">{{ $payable->due_date->format('d/m/Y') }}</span>
+                                                    <span class="font-medium text-ink">{{ $payable->description }}</span>
+                                                    <span class="text-ink-soft">{{ $payable->due_date->format('d/m/Y') }}</span>
                                                 </div>
-                                                <span class="font-semibold tabular-nums text-cin8">
+                                                <span class="font-semibold tabular-nums text-ink">
                                                     {{ \App\Support\Money::format((int) round($payable->amount * 100)) }}
                                                 </span>
                                             </li>

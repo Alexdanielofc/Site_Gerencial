@@ -22,7 +22,7 @@
         {{-- Pílulas de período (due_date) --}}
         <nav aria-label="Selecionar período" class="flex flex-col gap-3">
             <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-cin6">Ano</span>
+                <span class="w-12 text-sm font-medium text-ink-soft">Ano</span>
                 @foreach ($years as $item)
                     <x-pill
                         :href="route('payables.advanced', array_filter(['ano' => $item['year'], 'mes' => $item['month'], 'situacao' => $statusFilter !== 'todas' ? $statusFilter : null, 'busca' => $search]))"
@@ -34,7 +34,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-cin6">Mês</span>
+                <span class="w-12 text-sm font-medium text-ink-soft">Mês</span>
                 @foreach ($months as $item)
                     <x-pill
                         :href="route('payables.advanced', array_filter(['ano' => $monthStart->year, 'mes' => $item['month'], 'situacao' => $statusFilter !== 'todas' ? $statusFilter : null, 'busca' => $search]))"
@@ -71,45 +71,47 @@
         </div>
 
         {{-- Filtros: situação e busca por texto --}}
-        <form method="GET" action="{{ route('payables.advanced') }}" class="flex flex-wrap items-center gap-3">
-            <input type="hidden" name="ano" value="{{ $monthStart->year }}">
-            <input type="hidden" name="mes" value="{{ $monthStart->month }}">
+        <x-card>
+            <form method="GET" action="{{ route('payables.advanced') }}" class="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="ano" value="{{ $monthStart->year }}">
+                <input type="hidden" name="mes" value="{{ $monthStart->month }}">
 
-            {{-- Filtro de situação --}}
-            <div class="flex items-center gap-1.5 rounded-lg border border-cin3 bg-branco p-1 text-xs">
-                @foreach (['todas' => 'Todas', 'pendentes' => 'Pendentes', 'vencidas' => 'Vencidas', 'pagas' => 'Pagas'] as $key => $label)
-                    <button
-                        type="submit"
-                        name="situacao"
-                        value="{{ $key }}"
-                        class="cursor-pointer rounded-md px-3 py-1.5 font-medium transition-colors {{ $statusFilter === $key ? 'bg-blu6 text-branco' : 'text-cin6 hover:bg-cin1 hover:text-cin8' }}"
+                {{-- Filtro de situação --}}
+                <div class="flex items-center gap-1.5 rounded-lg border border-line bg-surface p-1 text-xs">
+                    @foreach (['todas' => 'Todas', 'pendentes' => 'Pendentes', 'vencidas' => 'Vencidas', 'pagas' => 'Pagas'] as $key => $label)
+                        <button
+                            type="submit"
+                            name="situacao"
+                            value="{{ $key }}"
+                            class="cursor-pointer rounded-md px-3 py-1.5 font-medium transition-colors {{ $statusFilter === $key ? 'bg-blu6 text-branco' : 'text-ink-soft hover:bg-surface-2 hover:text-ink' }}"
+                        >
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
+
+                {{-- Busca por texto na descrição --}}
+                <div class="relative min-w-[200px] flex-1">
+                    <input
+                        type="search"
+                        name="busca"
+                        value="{{ $search }}"
+                        placeholder="Buscar na descrição da conta..."
+                        class="w-full text-sm @error('busca') border-red6 @enderror"
                     >
-                        {{ $label }}
-                    </button>
-                @endforeach
-            </div>
+                </div>
+                <x-button type="submit" variant="secondary">Buscar</x-button>
 
-            {{-- Busca por texto na descrição --}}
-            <div class="relative flex-1 min-w-[200px]">
-                <input
-                    type="search"
-                    name="busca"
-                    value="{{ $search }}"
-                    placeholder="Buscar na descrição da conta..."
-                    class="w-full rounded-lg border border-cin3 px-3 py-2 text-sm text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6"
-                >
-            </div>
-            <x-button type="submit" variant="secondary">Buscar</x-button>
-
-            @if ($search !== '' || $statusFilter !== 'todas')
-                <a
-                    href="{{ route('payables.advanced', ['ano' => $monthStart->year, 'mes' => $monthStart->month]) }}"
-                    class="text-sm font-medium text-cin6 hover:text-cin8"
-                >
-                    Limpar filtros
-                </a>
-            @endif
-        </form>
+                @if ($search !== '' || $statusFilter !== 'todas')
+                    <a
+                        href="{{ route('payables.advanced', ['ano' => $monthStart->year, 'mes' => $monthStart->month]) }}"
+                        class="text-sm font-medium text-ink-soft hover:text-ink"
+                    >
+                        Limpar filtros
+                    </a>
+                @endif
+            </form>
+        </x-card>
 
         {{-- Tabela de contas --}}
         @if ($payables->isEmpty())
@@ -124,7 +126,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-cin1 text-left text-xs font-semibold uppercase tracking-wide text-cin6">
+                            <tr class="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
                                 <th class="px-5 py-3">Vencimento</th>
                                 <th class="px-5 py-3">Descrição</th>
                                 <th class="px-5 py-3 text-right">Valor</th>
@@ -136,23 +138,23 @@
                         <tbody class="divide-y divide-cin2">
                             @foreach ($payables as $payable)
                                 @php $status = $payable->status($today); @endphp
-                                <tr class="{{ $status === 'vencida' ? 'bg-red1/50 hover:bg-red1/70' : 'hover:bg-cin1' }}">
-                                    <td class="px-5 py-3 font-medium tabular-nums {{ $status === 'vencida' ? 'text-red7 font-semibold' : 'text-cin8' }}">
+                                <tr class="{{ $status === 'vencida' ? 'bg-red1/50 hover:bg-red1/70' : 'hover:bg-surface-2' }}">
+                                    <td class="px-5 py-3 font-medium tabular-nums {{ $status === 'vencida' ? 'text-red7 font-semibold' : 'text-ink' }}">
                                         {{ $payable->due_date->format('d/m/Y') }}
                                     </td>
-                                    <td class="px-5 py-3 text-cin8">
+                                    <td class="px-5 py-3 text-ink">
                                         {{ $payable->description }}
                                         @if ($payable->notes)
-                                            <p class="text-xs text-cin6">{{ $payable->notes }}</p>
+                                            <p class="text-xs text-ink-soft">{{ $payable->notes }}</p>
                                         @endif
                                     </td>
-                                    <td class="px-5 py-3 text-right font-semibold tabular-nums text-cin8">
+                                    <td class="px-5 py-3 text-right font-semibold tabular-nums text-ink">
                                         {{ \App\Support\Money::format((int) round($payable->amount * 100)) }}
                                     </td>
                                     <td class="px-5 py-3">
                                         <x-badge :status="$status" />
                                     </td>
-                                    <td class="px-5 py-3 tabular-nums text-cin6">
+                                    <td class="px-5 py-3 tabular-nums text-ink-soft">
                                         {{ $payable->paid_at ? $payable->paid_at->format('d/m/Y') : '—' }}
                                     </td>
                                     <td class="px-5 py-3 text-right">
@@ -171,7 +173,7 @@
 
                                             <a
                                                 href="{{ route('payables.edit', ['payable' => $payable->id, 'origem' => 'advanced']) }}"
-                                                class="inline-flex items-center gap-1 text-sm font-medium text-blu6 transition-colors hover:text-blu5"
+                                                class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
                                             >
                                                 <x-icons.pencil /> EDITAR
                                             </a>

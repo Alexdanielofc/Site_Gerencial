@@ -50,7 +50,7 @@
 
         {{-- Formulário de nova nota fiscal --}}
         <x-card size="lg">
-            <h2 class="mb-5 text-lg font-semibold text-cin8">Registrar nota fiscal</h2>
+            <h2 class="mb-5 text-lg font-semibold text-ink">Registrar nota fiscal</h2>
 
             <form method="POST" action="{{ route('invoices.store') }}" novalidate>
                 @csrf
@@ -58,14 +58,14 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {{-- Data de emissão --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="issue_date" class="text-sm font-medium text-cin8">Data de emissão</label>
+                        <label for="issue_date" class="text-sm font-medium text-ink">Data de emissão</label>
                         <input
                             id="issue_date"
                             name="issue_date"
                             type="date"
                             max="{{ $today->toDateString() }}"
                             value="{{ old('issue_date', $today->toDateString()) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('issue_date') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('issue_date') border-red6 @enderror"
                             required
                         >
                         @error('issue_date')
@@ -75,14 +75,14 @@
 
                     {{-- Número da nota --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="invoice_number" class="text-sm font-medium text-cin8">Número da nota <span class="text-xs font-normal text-cin6">(opcional)</span></label>
+                        <label for="invoice_number" class="text-sm font-medium text-ink">Número da nota <span class="text-xs font-normal text-ink-soft">(opcional)</span></label>
                         <input
                             id="invoice_number"
                             name="invoice_number"
                             type="text"
                             placeholder="Ex.: NF-1050"
                             value="{{ old('invoice_number') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('invoice_number') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('invoice_number') border-red6 @enderror"
                         >
                         @error('invoice_number')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>
@@ -91,7 +91,7 @@
 
                     {{-- Valor --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="amount" class="text-sm font-medium text-cin8">Valor (R$)</label>
+                        <label for="amount" class="text-sm font-medium text-ink">Valor (R$)</label>
                         <input
                             id="amount"
                             name="amount"
@@ -100,7 +100,7 @@
                             autocomplete="off"
                             placeholder="0,00"
                             value="{{ old('amount') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('amount') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('amount') border-red6 @enderror"
                             required
                         >
                         @error('amount')
@@ -110,14 +110,14 @@
 
                     {{-- Nome do cliente --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="customer_name" class="text-sm font-medium text-cin8">Cliente</label>
+                        <label for="customer_name" class="text-sm font-medium text-ink">Cliente</label>
                         <input
                             id="customer_name"
                             name="customer_name"
                             type="text"
                             placeholder="Razão social ou nome do cliente"
                             value="{{ old('customer_name') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('customer_name') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('customer_name') border-red6 @enderror"
                             required
                         >
                         @error('customer_name')
@@ -127,7 +127,7 @@
 
                     {{-- CNPJ --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="customer_cnpj" class="text-sm font-medium text-cin8">CNPJ <span class="text-xs font-normal text-cin6">(opcional, 14 dígitos)</span></label>
+                        <label for="customer_cnpj" class="text-sm font-medium text-ink">CNPJ <span class="text-xs font-normal text-ink-soft">(opcional, 14 dígitos)</span></label>
                         <input
                             id="customer_cnpj"
                             name="customer_cnpj"
@@ -135,7 +135,7 @@
                             inputmode="numeric"
                             placeholder="00.000.000/0000-00"
                             value="{{ old('customer_cnpj') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('customer_cnpj') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('customer_cnpj') border-red6 @enderror"
                         >
                         @error('customer_cnpj')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>
@@ -144,14 +144,14 @@
 
                     {{-- Observações --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
-                        <label for="notes" class="text-sm font-medium text-cin8">Observações <span class="text-xs font-normal text-cin6">(opcional)</span></label>
+                        <label for="notes" class="text-sm font-medium text-ink">Observações <span class="text-xs font-normal text-ink-soft">(opcional)</span></label>
                         <input
                             id="notes"
                             name="notes"
                             type="text"
                             placeholder="Informações adicionais da nota fiscal"
                             value="{{ old('notes') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('notes') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('notes') border-red6 @enderror"
                         >
                         @error('notes')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>
@@ -167,7 +167,7 @@
 
         {{-- Lista de notas de hoje --}}
         <section aria-labelledby="today-invoices-heading" class="flex flex-col gap-3">
-            <h2 id="today-invoices-heading" class="text-lg font-semibold text-cin8">
+            <h2 id="today-invoices-heading" class="text-lg font-semibold text-ink">
                 Notas fiscais de hoje ({{ $today->format('d/m/Y') }})
             </h2>
 
@@ -181,7 +181,7 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="bg-cin1 text-left text-xs font-semibold uppercase tracking-wide text-cin6">
+                                <tr class="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
                                     <th class="px-5 py-3">Número</th>
                                     <th class="px-5 py-3">Cliente</th>
                                     <th class="px-5 py-3">CNPJ</th>
@@ -192,20 +192,20 @@
                             </thead>
                             <tbody class="divide-y divide-cin2">
                                 @foreach ($todayInvoices as $invoice)
-                                    <tr class="hover:bg-cin1">
-                                        <td class="px-5 py-3 font-medium text-cin8">
+                                    <tr class="hover:bg-surface-2">
+                                        <td class="px-5 py-3 font-medium text-ink">
                                             {{ $invoice->invoice_number ?: '—' }}
                                         </td>
-                                        <td class="px-5 py-3 text-cin8">{{ $invoice->customer_name }}</td>
-                                        <td class="px-5 py-3 tabular-nums text-cin6">{{ $invoice->formatted_cnpj ?: '—' }}</td>
-                                        <td class="px-5 py-3 text-right font-semibold tabular-nums text-cin8">
+                                        <td class="px-5 py-3 text-ink">{{ $invoice->customer_name }}</td>
+                                        <td class="px-5 py-3 tabular-nums text-ink-soft">{{ $invoice->formatted_cnpj ?: '—' }}</td>
+                                        <td class="px-5 py-3 text-right font-semibold tabular-nums text-ink">
                                             {{ \App\Support\Money::format((int) round($invoice->amount * 100)) }}
                                         </td>
-                                        <td class="px-5 py-3 text-cin6">{{ $invoice->notes ?: '—' }}</td>
+                                        <td class="px-5 py-3 text-ink-soft">{{ $invoice->notes ?: '—' }}</td>
                                         <td class="px-5 py-3 text-right">
                                             <a
                                                 href="{{ route('invoices.edit', ['invoice' => $invoice->id, 'origem' => 'index']) }}"
-                                                class="inline-flex items-center gap-1 text-sm font-medium text-blu6 transition-colors hover:text-blu5"
+                                                class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
                                             >
                                                 <x-icons.pencil /> EDITAR
                                             </a>

@@ -15,7 +15,7 @@
         {{-- Pílulas de período --}}
         <nav aria-label="Selecionar período" class="flex flex-col gap-3">
             <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-cin6">Ano</span>
+                <span class="w-12 text-sm font-medium text-ink-soft">Ano</span>
                 @foreach ($years as $item)
                     <x-pill
                         :href="route('sales.advanced', ['ano' => $item['year'], 'mes' => $item['month']])"
@@ -27,7 +27,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-cin6">Mês</span>
+                <span class="w-12 text-sm font-medium text-ink-soft">Mês</span>
                 @foreach ($months as $item)
                     <x-pill
                         :href="route('sales.advanced', ['ano' => $monthStart->year, 'mes' => $item['month']])"
@@ -67,7 +67,7 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="bg-cin1 text-left text-xs font-semibold uppercase tracking-wide text-cin6">
+                        <tr class="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
                             <th class="px-5 py-3">Data</th>
                             <th class="px-5 py-3">Dia da semana</th>
                             <th class="px-5 py-3 text-right">Valor vendido</th>
@@ -76,22 +76,22 @@
                     </thead>
                     <tbody class="divide-y divide-cin2">
                         @foreach ($days as $day)
-                            <tr class="{{ $day['is_future'] ? 'opacity-50' : 'hover:bg-cin1' }}">
-                                <td class="px-5 py-3 tabular-nums text-cin8">{{ $day['label'] }}</td>
-                                <td class="px-5 py-3 text-cin6">{{ $day['weekday'] }}</td>
+                            <tr class="{{ $day['is_future'] ? 'opacity-50' : 'hover:bg-surface-2' }}">
+                                <td class="px-5 py-3 tabular-nums text-ink">{{ $day['label'] }}</td>
+                                <td class="px-5 py-3 text-ink-soft">{{ $day['weekday'] }}</td>
                                 <td class="px-5 py-3 text-right tabular-nums">
                                     @if ($day['has_record'])
                                         <span class="font-medium">{{ \App\Support\Money::format($day['amount']) }}</span>
                                     @else
-                                        <span class="text-cin6">{{ \App\Support\Money::format(0) }}</span>
-                                        <span class="ml-2 text-xs text-cin6">sem registro</span>
+                                        <span class="text-ink-soft">{{ \App\Support\Money::format(0) }}</span>
+                                        <span class="ml-2 text-xs text-ink-soft">sem registro</span>
                                     @endif
                                 </td>
                                 <td class="px-5 py-3 text-right">
                                     @if (! $day['is_future'])
                                         <a
                                             href="{{ route('sales.edit', ['date' => $day['date'], 'origem' => 'advanced', 'ano' => $monthStart->year, 'mes' => $monthStart->month]) }}"
-                                            class="inline-flex items-center gap-1 text-sm font-medium text-blu6 transition-colors hover:text-blu5"
+                                            class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
                                         >
                                             <x-icons.pencil /> EDITAR
                                         </a>

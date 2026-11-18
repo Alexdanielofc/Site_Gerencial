@@ -19,7 +19,7 @@
         {{-- Pílulas de período --}}
         <nav aria-label="Selecionar período" class="flex flex-col gap-3">
             <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-cin6">Ano</span>
+                <span class="w-12 text-sm font-medium text-ink-soft">Ano</span>
                 @foreach ($years as $item)
                     <x-pill
                         :href="route('invoices.advanced', array_filter(['ano' => $item['year'], 'mes' => $item['month'], 'busca' => $search]))"
@@ -31,7 +31,7 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-cin6">Mês</span>
+                <span class="w-12 text-sm font-medium text-ink-soft">Mês</span>
                 @foreach ($months as $item)
                     <x-pill
                         :href="route('invoices.advanced', array_filter(['ano' => $monthStart->year, 'mes' => $item['month'], 'busca' => $search]))"
@@ -63,29 +63,31 @@
         </div>
 
         {{-- Barra de busca --}}
-        <form method="GET" action="{{ route('invoices.advanced') }}" class="flex flex-wrap items-center gap-3">
-            <input type="hidden" name="ano" value="{{ $monthStart->year }}">
-            <input type="hidden" name="mes" value="{{ $monthStart->month }}">
+        <x-card>
+            <form method="GET" action="{{ route('invoices.advanced') }}" class="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="ano" value="{{ $monthStart->year }}">
+                <input type="hidden" name="mes" value="{{ $monthStart->month }}">
 
-            <div class="relative flex-1 min-w-[240px]">
-                <input
-                    type="search"
-                    name="busca"
-                    value="{{ $search }}"
-                    placeholder="Buscar por cliente ou número da nota..."
-                    class="w-full rounded-lg border border-cin3 px-3 py-2 text-sm text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6"
-                >
-            </div>
-            <x-button type="submit" variant="secondary">Buscar</x-button>
-            @if ($search !== '')
-                <a
-                    href="{{ route('invoices.advanced', ['ano' => $monthStart->year, 'mes' => $monthStart->month]) }}"
-                    class="text-sm font-medium text-cin6 hover:text-cin8"
-                >
-                    Limpar busca
-                </a>
-            @endif
-        </form>
+                <div class="relative min-w-[240px] flex-1">
+                    <input
+                        type="search"
+                        name="busca"
+                        value="{{ $search }}"
+                        placeholder="Buscar por cliente ou número da nota..."
+                        class="w-full text-sm @error('busca') border-red6 @enderror"
+                    >
+                </div>
+                <x-button type="submit" variant="secondary">Buscar</x-button>
+                @if ($search !== '')
+                    <a
+                        href="{{ route('invoices.advanced', ['ano' => $monthStart->year, 'mes' => $monthStart->month]) }}"
+                        class="text-sm font-medium text-ink-soft hover:text-ink"
+                    >
+                        Limpar busca
+                    </a>
+                @endif
+            </form>
+        </x-card>
 
         {{-- Tabela de notas fiscais --}}
         @if ($invoices->isEmpty())
@@ -100,7 +102,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-cin1 text-left text-xs font-semibold uppercase tracking-wide text-cin6">
+                            <tr class="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
                                 <th class="px-5 py-3">Data</th>
                                 <th class="px-5 py-3">Número</th>
                                 <th class="px-5 py-3">Cliente</th>
@@ -111,29 +113,29 @@
                         </thead>
                         <tbody class="divide-y divide-cin2">
                             @foreach ($invoices as $invoice)
-                                <tr class="hover:bg-cin1">
-                                    <td class="px-5 py-3 tabular-nums text-cin8">
+                                <tr class="hover:bg-surface-2">
+                                    <td class="px-5 py-3 tabular-nums text-ink">
                                         {{ $invoice->issue_date->format('d/m/Y') }}
                                     </td>
-                                    <td class="px-5 py-3 font-medium text-cin8">
+                                    <td class="px-5 py-3 font-medium text-ink">
                                         {{ $invoice->invoice_number ?: '—' }}
                                     </td>
-                                    <td class="px-5 py-3 text-cin8">
+                                    <td class="px-5 py-3 text-ink">
                                         {{ $invoice->customer_name }}
                                         @if ($invoice->notes)
-                                            <p class="text-xs text-cin6">{{ $invoice->notes }}</p>
+                                            <p class="text-xs text-ink-soft">{{ $invoice->notes }}</p>
                                         @endif
                                     </td>
-                                    <td class="px-5 py-3 tabular-nums text-cin6">
+                                    <td class="px-5 py-3 tabular-nums text-ink-soft">
                                         {{ $invoice->formatted_cnpj ?: '—' }}
                                     </td>
-                                    <td class="px-5 py-3 text-right font-semibold tabular-nums text-cin8">
+                                    <td class="px-5 py-3 text-right font-semibold tabular-nums text-ink">
                                         {{ \App\Support\Money::format((int) round($invoice->amount * 100)) }}
                                     </td>
                                     <td class="px-5 py-3 text-right">
                                         <a
                                             href="{{ route('invoices.edit', ['invoice' => $invoice->id, 'origem' => 'advanced']) }}"
-                                            class="inline-flex items-center gap-1 text-sm font-medium text-blu6 transition-colors hover:text-blu5"
+                                            class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
                                         >
                                             <x-icons.pencil /> EDITAR
                                         </a>

@@ -31,14 +31,14 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Data de emissão --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="issue_date" class="text-sm font-medium text-cin8">Data de emissão</label>
+                        <label for="issue_date" class="text-sm font-medium text-ink">Data de emissão</label>
                         <input
                             id="issue_date"
                             name="issue_date"
                             type="date"
                             max="{{ $today->toDateString() }}"
                             value="{{ old('issue_date', $invoice->issue_date->toDateString()) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('issue_date') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('issue_date') border-red6 @enderror"
                             required
                         >
                         @error('issue_date')
@@ -48,14 +48,14 @@
 
                     {{-- Número da nota --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="invoice_number" class="text-sm font-medium text-cin8">Número da nota <span class="text-xs font-normal text-cin6">(opcional)</span></label>
+                        <label for="invoice_number" class="text-sm font-medium text-ink">Número da nota <span class="text-xs font-normal text-ink-soft">(opcional)</span></label>
                         <input
                             id="invoice_number"
                             name="invoice_number"
                             type="text"
                             placeholder="Ex.: NF-1050"
                             value="{{ old('invoice_number', $invoice->invoice_number) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('invoice_number') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('invoice_number') border-red6 @enderror"
                         >
                         @error('invoice_number')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>
@@ -64,14 +64,14 @@
 
                     {{-- Nome do cliente --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="customer_name" class="text-sm font-medium text-cin8">Cliente</label>
+                        <label for="customer_name" class="text-sm font-medium text-ink">Cliente</label>
                         <input
                             id="customer_name"
                             name="customer_name"
                             type="text"
                             placeholder="Razão social ou nome do cliente"
                             value="{{ old('customer_name', $invoice->customer_name) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('customer_name') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('customer_name') border-red6 @enderror"
                             required
                         >
                         @error('customer_name')
@@ -81,7 +81,7 @@
 
                     {{-- CNPJ --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="customer_cnpj" class="text-sm font-medium text-cin8">CNPJ <span class="text-xs font-normal text-cin6">(opcional, 14 dígitos)</span></label>
+                        <label for="customer_cnpj" class="text-sm font-medium text-ink">CNPJ <span class="text-xs font-normal text-ink-soft">(opcional, 14 dígitos)</span></label>
                         <input
                             id="customer_cnpj"
                             name="customer_cnpj"
@@ -89,7 +89,7 @@
                             inputmode="numeric"
                             placeholder="00.000.000/0000-00"
                             value="{{ old('customer_cnpj', $invoice->customer_cnpj) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('customer_cnpj') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('customer_cnpj') border-red6 @enderror"
                         >
                         @error('customer_cnpj')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>
@@ -98,7 +98,7 @@
 
                     {{-- Valor --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="amount" class="text-sm font-medium text-cin8">Valor (R$)</label>
+                        <label for="amount" class="text-sm font-medium text-ink">Valor (R$)</label>
                         <input
                             id="amount"
                             name="amount"
@@ -107,7 +107,7 @@
                             autocomplete="off"
                             placeholder="0,00"
                             value="{{ old('amount', number_format($invoice->amount, 2, ',', '.')) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('amount') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('amount') border-red6 @enderror"
                             required
                         >
                         @error('amount')
@@ -117,13 +117,13 @@
 
                     {{-- Observações --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="notes" class="text-sm font-medium text-cin8">Observações <span class="text-xs font-normal text-cin6">(opcional)</span></label>
+                        <label for="notes" class="text-sm font-medium text-ink">Observações <span class="text-xs font-normal text-ink-soft">(opcional)</span></label>
                         <textarea
                             id="notes"
                             name="notes"
                             rows="3"
                             placeholder="Informações adicionais da nota fiscal"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('notes') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('notes') border-red6 @enderror"
                         >{{ old('notes', $invoice->notes) }}</textarea>
                         @error('notes')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>

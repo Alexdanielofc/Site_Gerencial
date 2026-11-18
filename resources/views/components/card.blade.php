@@ -8,6 +8,6 @@
     };
 @endphp
 
-<{{ $as }} {{ $attributes->class(['rounded-xl border border-cin2 bg-branco shadow-sm', $padding]) }}>
+<{{ $as }} {{ $attributes->class(['rounded-xl border border-line bg-surface shadow-sm', $padding]) }}>
     {{ $slot }}
 </{{ $as }}>

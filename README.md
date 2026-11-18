@@ -107,3 +107,48 @@ O sistema foi desenvolvido como produto white label. Para personalizar para a em
 3. **Crédito do Rodapé**: `resources/views/components/footer.blade.php`.
 4. **Paleta de Cores e Tokens Visuais**: `resources/css/app.css` (variáveis CSS dentro de `:root` e `@theme inline`).
 5. **Nome da Aplicação**: Variável `APP_NAME` no arquivo `.env`.
+
+---
+
+## Tokens Semânticos e Tema Escuro
+
+O sistema utiliza um conjunto de **tokens semânticos de cor** definidos em `resources/css/app.css`. Esses tokens se sobrepõem automaticamente no modo escuro sem necessidade de classes `dark:` nas views.
+
+### Tokens Semânticos
+
+| Token CSS | Tailwind | Modo Claro | Modo Escuro | Uso |
+|---|---|---|---|---|
+| `--surface` | `bg-surface` | `#ffffff` | `#111a2e` | Fundo de cards, campos, tabelas |
+| `--surface-2` | `bg-surface-2` | `#f9fafb` | `#16213a` | Cabeçalhos de tabela, fundos suaves |
+| `--line` | `border-line` | `#d1d5db` | `#26344f` | Bordas de cards, inputs, divisores |
+| `--ink` | `text-ink` | `#1f2937` | `#e6edf7` | Texto principal |
+| `--ink-soft` | `text-ink-soft` | `#4b5563` | `#9fb0c8` | Texto secundário/dicas |
+| `--accent` | `text-accent` | `#2563eb` | `#93c5fd` | Links, textos de destaque, ícones de navegação |
+| `--chrome` | `bg-chrome` | `#1f2937` | `#070d19` | Header e footer |
+
+### Modo Escuro
+
+O tema escuro é controlado pelo atributo `data-theme="dark"` na tag `<html>`. Ele é aplicado automaticamente de acordo com:
+
+1. **Preferência salva pelo usuário** (`localStorage.getItem('theme')`).
+2. **Preferência do sistema** (`prefers-color-scheme: dark`), usada como fallback quando não há preferência salva.
+
+Um script inline no `<head>` do layout (antes do CSS) aplica o tema imediatamente, sem piscar.
+
+#### Alternância pelo usuário
+
+O botão **sol/lua** exibido no canto do header alterna entre os temas e persiste a escolha em `localStorage`.
+
+#### Como personalizar tokens no modo escuro
+
+Para ajustar uma cor no modo escuro, edite o bloco `html[data-theme='dark']` em `resources/css/app.css`:
+
+```css
+html[data-theme='dark'] {
+    --surface: #111a2e;   /* fundo de card no escuro */
+    --ink: #e6edf7;       /* texto principal no escuro */
+    /* ... */
+}
+```
+
+Após qualquer alteração de CSS, rode `npm run build` para recompilar os assets.

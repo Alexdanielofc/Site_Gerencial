@@ -31,14 +31,14 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Descrição --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="description" class="text-sm font-medium text-cin8">Descrição</label>
+                        <label for="description" class="text-sm font-medium text-ink">Descrição</label>
                         <input
                             id="description"
                             name="description"
                             type="text"
                             placeholder="Ex.: Internet, Fornecedor de bobinas"
                             value="{{ old('description', $payable->description) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('description') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('description') border-red6 @enderror"
                             required
                         >
                         @error('description')
@@ -48,7 +48,7 @@
 
                     {{-- Valor --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="amount" class="text-sm font-medium text-cin8">Valor (R$)</label>
+                        <label for="amount" class="text-sm font-medium text-ink">Valor (R$)</label>
                         <input
                             id="amount"
                             name="amount"
@@ -57,7 +57,7 @@
                             autocomplete="off"
                             placeholder="0,00"
                             value="{{ old('amount', number_format($payable->amount, 2, ',', '.')) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('amount') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('amount') border-red6 @enderror"
                             required
                         >
                         @error('amount')
@@ -67,13 +67,13 @@
 
                     {{-- Data de vencimento --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="due_date" class="text-sm font-medium text-cin8">Data de vencimento</label>
+                        <label for="due_date" class="text-sm font-medium text-ink">Data de vencimento</label>
                         <input
                             id="due_date"
                             name="due_date"
                             type="date"
                             value="{{ old('due_date', $payable->due_date->toDateString()) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('due_date') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('due_date') border-red6 @enderror"
                             required
                         >
                         @error('due_date')
@@ -83,8 +83,8 @@
 
                     {{-- Data de pagamento (limpar para reabrir) --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="paid_at" class="text-sm font-medium text-cin8">
-                            Data de pagamento <span class="text-xs font-normal text-cin6">(deixe em branco se a conta estiver em aberto)</span>
+                        <label for="paid_at" class="text-sm font-medium text-ink">
+                            Data de pagamento <span class="text-xs font-normal text-ink-soft">(deixe em branco se a conta estiver em aberto)</span>
                         </label>
                         <input
                             id="paid_at"
@@ -92,7 +92,7 @@
                             type="date"
                             max="{{ $today->toDateString() }}"
                             value="{{ old('paid_at', $payable->paid_at ? $payable->paid_at->toDateString() : '') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('paid_at') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('paid_at') border-red6 @enderror"
                         >
                         @error('paid_at')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>
@@ -101,13 +101,13 @@
 
                     {{-- Observações --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="notes" class="text-sm font-medium text-cin8">Observações <span class="text-xs font-normal text-cin6">(opcional)</span></label>
+                        <label for="notes" class="text-sm font-medium text-ink">Observações <span class="text-xs font-normal text-ink-soft">(opcional)</span></label>
                         <textarea
                             id="notes"
                             name="notes"
                             rows="3"
                             placeholder="Informações adicionais da conta"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('notes') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('notes') border-red6 @enderror"
                         >{{ old('notes', $payable->notes) }}</textarea>
                         @error('notes')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>

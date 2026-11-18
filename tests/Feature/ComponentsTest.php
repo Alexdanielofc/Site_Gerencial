@@ -37,7 +37,7 @@ it('renders a button as a link when it has an href', function () {
 it('renders a secondary button element with the default type', function () {
     $this->blade('<x-button variant="secondary">Avançado</x-button>')
         ->assertSee('<button type="button"', false)
-        ->assertSee('border-cin3', false)
+        ->assertSee('border-line', false)
         ->assertSee('Avançado');
 });
 
@@ -48,7 +48,7 @@ it('marks only the selected pill as current', function () {
 
     $this->blade('<x-pill href="/b">2025</x-pill>')
         ->assertDontSee('aria-current', false)
-        ->assertSee('border-cin3', false);
+        ->assertSee('border-line', false);
 });
 
 it('renders an empty state with title, description and action', function () {
@@ -82,3 +82,11 @@ it('renders a badge with the correct style and icon for each status', function (
     ['vencida', 'border-red2 bg-red1 text-red7', 'Vencida'],
     ['pendente', 'border-yel2 bg-yel1 text-yel8', 'Pendente'],
 ]);
+
+it('renders the theme toggle button with the correct aria attributes', function () {
+    $this->blade('<x-theme-toggle />')
+        ->assertSee('<button', false)
+        ->assertSee('data-theme-toggle', false)
+        ->assertSee('aria-label="Alternar tema"', false)
+        ->assertSee('aria-pressed="false"', false);
+});

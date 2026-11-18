@@ -48,7 +48,7 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-cin1 text-left text-xs font-semibold uppercase tracking-wide text-cin6">
+                            <tr class="bg-surface-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
                                 <th class="px-5 py-3">Data</th>
                                 <th class="px-5 py-3">Dia da semana</th>
                                 <th class="px-5 py-3 text-right">Expectativa (R$)</th>
@@ -56,9 +56,9 @@
                         </thead>
                         <tbody class="divide-y divide-cin2">
                             @foreach ($days as $day)
-                                <tr class="hover:bg-cin1">
-                                    <td class="px-5 py-3 tabular-nums text-cin8">{{ $day['label'] }}</td>
-                                    <td class="px-5 py-3 text-cin6">{{ $day['weekday'] }}</td>
+                                <tr class="hover:bg-surface-2">
+                                    <td class="px-5 py-3 tabular-nums text-ink">{{ $day['label'] }}</td>
+                                    <td class="px-5 py-3 text-ink-soft">{{ $day['weekday'] }}</td>
                                     <td class="px-5 py-3 text-right">
                                         <input
                                             type="text"
@@ -66,7 +66,7 @@
                                             name="expectations[{{ $day['date'] }}]"
                                             value="{{ $day['amount'] }}"
                                             placeholder="0,00"
-                                            class="w-32 rounded border border-cin3 px-2.5 py-1.5 text-right tabular-nums text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6"
+                                            class="w-32 rounded border border-line px-2.5 py-1.5 text-right tabular-nums text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
                                             aria-label="Expectativa de {{ $day['label'] }}"
                                         >
                                     </td>

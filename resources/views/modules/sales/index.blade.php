@@ -29,20 +29,52 @@
             </x-alert>
         @endif
 
-        {{-- Card central --}}
-        <x-card size="lg" class="mx-auto w-full max-w-2xl">
+        {{-- Indicadores do mês --}}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <x-stat
+                label="Vendido no mês"
+                :value="\App\Support\Money::format($indicators['sold_cents'])"
+                tone="blue"
+            />
+            <x-stat
+                label="Meta acumulada até hoje"
+                :value="\App\Support\Money::format($indicators['accrued_goal_cents'])"
+                tone="neutral"
+            />
+            <x-stat
+                label="% da meta acumulada"
+                :value="\App\Support\Money::formatPercent($indicators['accrued_percent'])"
+                :tone="$indicators['accrued_percent_tone']"
+            />
+        </div>
+
+        {{-- Card principal: data, expectativa e formulário/registro --}}
+        <x-card size="lg">
             <div class="flex flex-col gap-6">
 
                 {{-- Data e dia da semana --}}
                 <div class="flex items-center gap-3">
-                    <span class="shrink-0 text-cin6"><x-icons.calendar /></span>
+                    <span class="shrink-0 text-ink-soft"><x-icons.calendar /></span>
                     <div>
                         <p class="text-lg font-semibold">{{ $today->format('d/m/Y') }}</p>
-                        <p class="text-sm text-cin6">{{ Str::ucfirst($today->translatedFormat('l')) }}</p>
+                        <p class="text-sm text-ink-soft">{{ Str::ucfirst($today->translatedFormat('l')) }}</p>
                     </div>
                 </div>
 
-                <hr class="border-cin2">
+                {{-- Expectativa de hoje --}}
+                @if ($todayExpectation && $todayExpectation->amount > 0)
+                    <div class="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm">
+                        <span class="text-ink-soft">Expectativa de hoje</span>
+                        <span class="font-semibold tabular-nums">{{ \App\Support\Money::format((int) round($todayExpectation->amount * 100)) }}</span>
+                    </div>
+                @else
+                    <x-alert type="danger" title="DIA SEM EXPECTATIVA">
+                        Nenhuma expectativa definida para hoje.
+                        <a href="{{ route('sales.expectations.edit') }}" class="font-medium underline hover:no-underline">Definir expectativas do mês</a>
+                    </x-alert>
+                @endif
+
+                <hr class="border-line">
 
                 {{-- Venda de hoje --}}
                 @if ($todaySale)
@@ -64,14 +96,14 @@
                         @csrf
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-1.5">
-                                <label for="amount" class="text-sm font-medium text-cin8">Venda diária (R$)</label>
+                                <label for="amount" class="text-sm font-medium text-ink">Venda diária (R$)</label>
                                 <input
                                     id="amount"
                                     name="amount"
                                     type="text"
                                     inputmode="decimal"
                                     autocomplete="off"
-                                    class="rounded-lg border border-cin3 px-3 py-2.5 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('amount') border-red6 @enderror"
+                                    class="rounded-lg border border-line px-3 py-2.5 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('amount') border-red6 @enderror"
                                     placeholder="0,00"
                                     value="{{ old('amount') }}"
                                     aria-describedby="{{ $errors->has('amount') ? 'amount-error' : '' }}"
@@ -86,42 +118,6 @@
                         </div>
                     </form>
                 @endif
-
-                <hr class="border-cin2">
-
-                {{-- Expectativa de hoje --}}
-                @if ($todayExpectation && $todayExpectation->amount > 0)
-                    <div class="flex items-center justify-between gap-4 text-sm">
-                        <span class="text-cin6">Expectativa de hoje</span>
-                        <span class="font-semibold tabular-nums">{{ \App\Support\Money::format((int) round($todayExpectation->amount * 100)) }}</span>
-                    </div>
-                @else
-                    <x-alert type="danger" title="DIA SEM EXPECTATIVA">
-                        Nenhuma expectativa definida para hoje.
-                        <a href="{{ route('sales.expectations.edit') }}" class="font-medium underline hover:no-underline">Definir expectativas do mês</a>
-                    </x-alert>
-                @endif
-
-                <hr class="border-cin2">
-
-                {{-- Indicadores do mês --}}
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <x-stat
-                        label="Vendido no mês"
-                        :value="\App\Support\Money::format($indicators['sold_cents'])"
-                        tone="blue"
-                    />
-                    <x-stat
-                        label="Meta acumulada até hoje"
-                        :value="\App\Support\Money::format($indicators['accrued_goal_cents'])"
-                        tone="neutral"
-                    />
-                    <x-stat
-                        label="% da meta acumulada"
-                        :value="\App\Support\Money::formatPercent($indicators['accrued_percent'])"
-                        :tone="$indicators['accrued_percent_tone']"
-                    />
-                </div>
 
             </div>
         </x-card>

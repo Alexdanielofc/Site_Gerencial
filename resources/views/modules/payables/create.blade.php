@@ -28,14 +28,14 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Descrição --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="description" class="text-sm font-medium text-cin8">Descrição</label>
+                        <label for="description" class="text-sm font-medium text-ink">Descrição</label>
                         <input
                             id="description"
                             name="description"
                             type="text"
                             placeholder="Ex.: Internet, Fornecedor de bobinas"
                             value="{{ old('description') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('description') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('description') border-red6 @enderror"
                             required
                         >
                         @error('description')
@@ -45,7 +45,7 @@
 
                     {{-- Valor --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="amount" class="text-sm font-medium text-cin8">Valor (R$)</label>
+                        <label for="amount" class="text-sm font-medium text-ink">Valor (R$)</label>
                         <input
                             id="amount"
                             name="amount"
@@ -54,7 +54,7 @@
                             autocomplete="off"
                             placeholder="0,00"
                             value="{{ old('amount') }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('amount') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('amount') border-red6 @enderror"
                             required
                         >
                         @error('amount')
@@ -64,13 +64,13 @@
 
                     {{-- Data de vencimento --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="due_date" class="text-sm font-medium text-cin8">Data de vencimento</label>
+                        <label for="due_date" class="text-sm font-medium text-ink">Data de vencimento</label>
                         <input
                             id="due_date"
                             name="due_date"
                             type="date"
                             value="{{ old('due_date', $today->toDateString()) }}"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('due_date') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('due_date') border-red6 @enderror"
                             required
                         >
                         @error('due_date')
@@ -80,13 +80,13 @@
 
                     {{-- Observações --}}
                     <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label for="notes" class="text-sm font-medium text-cin8">Observações <span class="text-xs font-normal text-cin6">(opcional)</span></label>
+                        <label for="notes" class="text-sm font-medium text-ink">Observações <span class="text-xs font-normal text-ink-soft">(opcional)</span></label>
                         <textarea
                             id="notes"
                             name="notes"
                             rows="3"
                             placeholder="Informações adicionais da conta"
-                            class="rounded-lg border border-cin3 px-3 py-2 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('notes') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('notes') border-red6 @enderror"
                         >{{ old('notes') }}</textarea>
                         @error('notes')
                             <p class="text-xs text-red6" role="alert">{{ $message }}</p>

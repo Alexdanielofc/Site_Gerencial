@@ -40,22 +40,22 @@
 
                     {{-- Data (somente leitura) --}}
                     <div class="flex flex-col gap-1.5">
-                        <label class="text-sm font-medium text-cin8">Data</label>
-                        <p class="rounded-lg border border-cin2 bg-cin1 px-3 py-2.5 text-cin6">
+                        <label class="text-sm font-medium text-ink">Data</label>
+                        <p class="rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-ink-soft">
                             {{ $carbon->format('d/m/Y') }} — {{ $dayOfWeek }}
                         </p>
                     </div>
 
                     {{-- Valor --}}
                     <div class="flex flex-col gap-1.5">
-                        <label for="amount" class="text-sm font-medium text-cin8">Valor da venda (R$)</label>
+                        <label for="amount" class="text-sm font-medium text-ink">Valor da venda (R$)</label>
                         <input
                             id="amount"
                             name="amount"
                             type="text"
                             inputmode="decimal"
                             autocomplete="off"
-                            class="rounded-lg border border-cin3 px-3 py-2.5 text-cin8 focus:border-blu6 focus:outline-none focus:ring-1 focus:ring-blu6 @error('amount') border-red6 @enderror"
+                            class="rounded-lg border border-line px-3 py-2.5 text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent @error('amount') border-red6 @enderror"
                             placeholder="0,00"
                             value="{{ old('amount', $sale ? number_format($sale->amount, 2, ',', '.') : '') }}"
                             aria-describedby="{{ $errors->has('amount') ? 'amount-error' : '' }}"
@@ -67,14 +67,14 @@
 
                     {{-- Expectativa do dia (só leitura) --}}
                     @if ($expectation)
-                        <div class="flex items-center justify-between gap-4 rounded-lg border border-cin2 bg-cin1 px-4 py-3 text-sm">
-                            <span class="text-cin6">Expectativa do dia</span>
+                        <div class="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm">
+                            <span class="text-ink-soft">Expectativa do dia</span>
                             <span class="font-semibold tabular-nums">{{ \App\Support\Money::format((int) round($expectation->amount * 100)) }}</span>
                         </div>
                     @else
-                        <div class="flex items-center justify-between gap-4 rounded-lg border border-cin2 bg-cin1 px-4 py-3 text-sm">
-                            <span class="text-cin6">Expectativa do dia</span>
-                            <span class="text-cin6">Sem expectativa definida</span>
+                        <div class="flex items-center justify-between gap-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm">
+                            <span class="text-ink-soft">Expectativa do dia</span>
+                            <span class="text-ink-soft">Sem expectativa definida</span>
                         </div>
                     @endif
 
