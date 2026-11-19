@@ -61,7 +61,7 @@
 
         {{-- Barra de busca --}}
         <x-card>
-            <form method="GET" action="{{ route('invoices.advanced') }}" class="flex flex-wrap items-center gap-3">
+            <form method="GET" action="{{ route('invoices.advanced') }}" data-loading-text="Buscando..." class="flex flex-wrap items-center gap-3">
                 <input type="hidden" name="ano" value="{{ $monthStart->year }}">
                 <input type="hidden" name="mes" value="{{ $monthStart->month }}">
 

@@ -6,6 +6,7 @@ use App\Http\Requests\PeriodRequest;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Models\Invoice;
+use App\Support\SubmissionGuard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,11 @@ class InvoiceController extends Controller
      */
     public function store(StoreInvoiceRequest $request): RedirectResponse
     {
+        if (! SubmissionGuard::firstTime($request)) {
+            return redirect()->route('invoices.index')
+                ->with('warning', 'Este registro já foi enviado.');
+        }
+
         Invoice::create($request->validated());
 
         return redirect()->route('invoices.index')

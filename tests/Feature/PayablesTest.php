@@ -288,3 +288,68 @@ it('renders create page with form', function () {
         ->assertOk()
         ->assertSee('Nova conta a pagar');
 });
+
+// ── Idempotência (_submission_id) ───────────────────────────────────────────
+
+it('prevents duplicate payable creation when submitting the same _submission_id twice', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $payload = [
+        'description' => 'Energia Elétrica',
+        'amount' => '350,00',
+        'due_date' => '2026-06-20',
+        '_submission_id' => 'token-payable-123',
+    ];
+
+    $this->post(route('payables.store'), $payload)
+        ->assertRedirect(route('payables.index'))
+        ->assertSessionHas('success');
+
+    $this->post(route('payables.store'), $payload)
+        ->assertRedirect(route('payables.index'))
+        ->assertSessionHas('warning', 'Este registro já foi enviado.');
+
+    expect(Payable::count())->toBe(1);
+});
+
+it('creates two payables when using different _submission_id tokens', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $this->post(route('payables.store'), [
+        'description' => 'Conta A',
+        'amount' => '100,00',
+        'due_date' => '2026-06-20',
+        '_submission_id' => 'token-pay-a',
+    ])->assertSessionHas('success');
+
+    $this->post(route('payables.store'), [
+        'description' => 'Conta B',
+        'amount' => '200,00',
+        'due_date' => '2026-06-20',
+        '_submission_id' => 'token-pay-b',
+    ])->assertSessionHas('success');
+
+    expect(Payable::count())->toBe(2);
+});
+
+it('does not consume _submission_id when payable validation fails', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $this->post(route('payables.store'), [
+        'description' => '',
+        'amount' => '100,00',
+        'due_date' => '2026-06-20',
+        '_submission_id' => 'token-retry-payable',
+    ])->assertSessionHasErrors('description');
+
+    expect(Payable::count())->toBe(0);
+
+    $this->post(route('payables.store'), [
+        'description' => 'Conta Corrigida',
+        'amount' => '100,00',
+        'due_date' => '2026-06-20',
+        '_submission_id' => 'token-retry-payable',
+    ])->assertSessionHas('success');
+
+    expect(Payable::count())->toBe(1);
+});

@@ -10,8 +10,9 @@
         <x-flash />
 
         <x-card size="lg" class="mx-auto w-full max-w-2xl">
-            <form method="POST" action="{{ route('invoices.store') }}" novalidate>
+            <form method="POST" action="{{ route('invoices.store') }}" data-loading-text="Salvando..." novalidate>
                 @csrf
+                <input type="hidden" name="_submission_id" value="{{ old('_submission_id', (string) \Illuminate\Support\Str::uuid()) }}">
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Data de emissão --}}

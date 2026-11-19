@@ -38,8 +38,9 @@
         <x-card size="lg">
             <h2 class="mb-5 text-lg font-semibold text-ink">Registrar conta a pagar</h2>
 
-            <form method="POST" action="{{ route('payables.store') }}" novalidate>
+            <form method="POST" action="{{ route('payables.store') }}" data-loading-text="Salvando..." novalidate>
                 @csrf
+                <input type="hidden" name="_submission_id" value="{{ old('_submission_id', (string) \Illuminate\Support\Str::uuid()) }}">
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {{-- Descrição --}}

@@ -10,7 +10,7 @@
         <x-flash />
 
         <x-card size="lg" class="mx-auto w-full max-w-2xl">
-            <form method="POST" action="{{ route('invoices.update', $invoice->id) }}" novalidate>
+            <form method="POST" action="{{ route('invoices.update', $invoice->id) }}" data-loading-text="Salvando..." novalidate>
                 @csrf
                 @method('PUT')
 

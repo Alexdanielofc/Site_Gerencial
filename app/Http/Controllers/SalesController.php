@@ -7,6 +7,7 @@ use App\Http\Requests\StoreSaleRequest;
 use App\Http\Requests\UpdateSaleRequest;
 use App\Models\DailySale;
 use App\Models\SalesExpectation;
+use App\Support\SubmissionGuard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
@@ -40,6 +41,11 @@ class SalesController extends Controller
      */
     public function store(StoreSaleRequest $request): RedirectResponse
     {
+        if (! SubmissionGuard::firstTime($request)) {
+            return redirect()->route('sales.index')
+                ->with('warning', 'Este registro já foi enviado.');
+        }
+
         $date = today()->toDateString();
         $exists = DailySale::query()->where('sale_date', $date)->exists();
 

@@ -15,6 +15,7 @@
             <form
                 method="POST"
                 action="{{ route('sales.update', ['date' => $carbon->toDateString()]) }}"
+                data-loading-text="Salvando..."
                 novalidate
             >
                 @csrf

@@ -6,6 +6,7 @@ use App\Http\Requests\PeriodRequest;
 use App\Http\Requests\StorePayableRequest;
 use App\Http\Requests\UpdatePayableRequest;
 use App\Models\Payable;
+use App\Support\SubmissionGuard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,6 +70,11 @@ class PayableController extends Controller
      */
     public function store(StorePayableRequest $request): RedirectResponse
     {
+        if (! SubmissionGuard::firstTime($request)) {
+            return redirect()->route('payables.index')
+                ->with('warning', 'Este registro já foi enviado.');
+        }
+
         Payable::create($request->validated());
 
         return redirect()->route('payables.index')

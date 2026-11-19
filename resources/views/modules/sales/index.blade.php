@@ -77,8 +77,9 @@
                         </div>
                     </div>
                 @else
-                    <form method="POST" action="{{ route('sales.store') }}" novalidate>
+                    <form method="POST" action="{{ route('sales.store') }}" data-loading-text="Salvando..." novalidate>
                         @csrf
+                        <input type="hidden" name="_submission_id" value="{{ old('_submission_id', (string) \Illuminate\Support\Str::uuid()) }}">
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-1.5">
                                 <label for="amount" class="text-sm font-medium text-ink">Venda diária (R$)</label>

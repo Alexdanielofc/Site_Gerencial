@@ -576,3 +576,59 @@ it('returns 404 when update sale route receives an invalid date format', functio
     $this->put('/modulos/vendas/dia/2026-02-30', ['amount' => '100,00'])->assertNotFound();
     $this->put('/modulos/vendas/dia/invalido', ['amount' => '100,00'])->assertNotFound();
 });
+
+// ── Idempotência (_submission_id) e manutenção de digitado em expectativas ──
+
+it('keeps the typed invalid value in old input after expectation validation error', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $this->from(route('sales.expectations.edit', ['ano' => 2026, 'mes' => 6]))
+        ->followingRedirects()
+        ->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+            'expectations' => [
+                '2026-06-01' => 'valor-errado-123',
+            ],
+            'ano' => 2026,
+            'mes' => 6,
+        ])
+        ->assertOk()
+        ->assertSee('valor-errado-123')
+        ->assertSee('border-red6', false);
+});
+
+it('prevents duplicate sale submission with the same _submission_id and warns on second submit', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $payload = [
+        'amount' => '450,00',
+        '_submission_id' => 'token-sale-123',
+    ];
+
+    $this->post(route('sales.store'), $payload)
+        ->assertRedirect(route('sales.index'))
+        ->assertSessionHas('success');
+
+    $this->post(route('sales.store'), $payload)
+        ->assertRedirect(route('sales.index'))
+        ->assertSessionHas('warning', 'Este registro já foi enviado.');
+
+    expect(DailySale::count())->toBe(1);
+});
+
+it('does not consume _submission_id when sale validation fails', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $this->post(route('sales.store'), [
+        'amount' => 'invalido',
+        '_submission_id' => 'token-sale-retry',
+    ])->assertSessionHasErrors('amount');
+
+    expect(DailySale::count())->toBe(0);
+
+    $this->post(route('sales.store'), [
+        'amount' => '300,00',
+        '_submission_id' => 'token-sale-retry',
+    ])->assertSessionHas('success');
+
+    expect(DailySale::count())->toBe(1);
+});

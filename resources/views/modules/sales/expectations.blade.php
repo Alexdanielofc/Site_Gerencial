@@ -21,7 +21,7 @@
             @endforeach
         </nav>
 
-        <form method="POST" action="{{ route('sales.expectations.update', ['ano' => $monthStart->year, 'mes' => $monthStart->month]) }}" novalidate>
+        <form method="POST" action="{{ route('sales.expectations.update', ['ano' => $monthStart->year, 'mes' => $monthStart->month]) }}" data-loading-text="Salvando..." novalidate>
             @csrf
             @method('PUT')
 

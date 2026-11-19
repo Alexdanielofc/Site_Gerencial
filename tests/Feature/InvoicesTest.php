@@ -243,3 +243,70 @@ it('renders create page with empty form', function () {
         ->assertOk()
         ->assertSee('Nova nota fiscal');
 });
+
+// ── Idempotência (_submission_id) ───────────────────────────────────────────
+
+it('prevents duplicate invoice creation when submitting the same _submission_id twice', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $payload = [
+        'issue_date' => '2026-06-15',
+        'customer_name' => 'Cliente Teste',
+        'amount' => '250,00',
+        '_submission_id' => 'token-invoice-123',
+    ];
+
+    $this->post(route('invoices.store'), $payload)
+        ->assertRedirect(route('invoices.index'))
+        ->assertSessionHas('success');
+
+    $this->post(route('invoices.store'), $payload)
+        ->assertRedirect(route('invoices.index'))
+        ->assertSessionHas('warning', 'Este registro já foi enviado.');
+
+    expect(Invoice::count())->toBe(1);
+});
+
+it('creates two invoices when using different _submission_id tokens', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $this->post(route('invoices.store'), [
+        'issue_date' => '2026-06-15',
+        'customer_name' => 'Cliente A',
+        'amount' => '100,00',
+        '_submission_id' => 'token-a',
+    ])->assertSessionHas('success');
+
+    $this->post(route('invoices.store'), [
+        'issue_date' => '2026-06-15',
+        'customer_name' => 'Cliente B',
+        'amount' => '200,00',
+        '_submission_id' => 'token-b',
+    ])->assertSessionHas('success');
+
+    expect(Invoice::count())->toBe(2);
+});
+
+it('does not consume _submission_id when invoice validation fails', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    // Invalid payload (missing customer_name)
+    $this->post(route('invoices.store'), [
+        'issue_date' => '2026-06-15',
+        'customer_name' => '',
+        'amount' => '100,00',
+        '_submission_id' => 'token-retry-invoice',
+    ])->assertSessionHasErrors('customer_name');
+
+    expect(Invoice::count())->toBe(0);
+
+    // Resubmit valid payload with the same token
+    $this->post(route('invoices.store'), [
+        'issue_date' => '2026-06-15',
+        'customer_name' => 'Cliente Corrigido',
+        'amount' => '100,00',
+        '_submission_id' => 'token-retry-invoice',
+    ])->assertSessionHas('success');
+
+    expect(Invoice::count())->toBe(1);
+});

@@ -139,3 +139,22 @@ it('renders validation errors list when except-errors is false and hides when tr
         ->assertDontSee('Verifique os campos')
         ->assertDontSee('Campo obrigatório');
 });
+
+it('includes disabled and motion-reduce classes in button, pill and theme-toggle', function () {
+    $this->blade('<x-button disabled>Salvar</x-button>')
+        ->assertSee('disabled:opacity-60', false)
+        ->assertSee('disabled:cursor-not-allowed', false)
+        ->assertSee('motion-reduce:transition-none', false)
+        ->assertSee('motion-reduce:transform-none', false);
+
+    $this->blade('<x-pill href="/a">2026</x-pill>')
+        ->assertSee('motion-reduce:transition-none', false);
+
+    $this->blade('<x-theme-toggle />')
+        ->assertSee('motion-reduce:transition-none', false);
+});
+
+it('renders the spinner icon with animate-spin', function () {
+    $this->blade('<x-icons.spinner />')
+        ->assertSee('animate-spin', false);
+});

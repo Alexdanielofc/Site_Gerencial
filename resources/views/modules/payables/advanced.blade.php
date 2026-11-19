@@ -66,7 +66,7 @@
 
         {{-- Filtros: situação e busca por texto --}}
         <x-card>
-            <form method="GET" action="{{ route('payables.advanced') }}" class="flex flex-wrap items-center gap-3">
+            <form method="GET" action="{{ route('payables.advanced') }}" data-loading-text="Buscando..." class="flex flex-wrap items-center gap-3">
                 <input type="hidden" name="ano" value="{{ $monthStart->year }}">
                 <input type="hidden" name="mes" value="{{ $monthStart->month }}">
 
