@@ -9,19 +9,7 @@
             back-label="Voltar"
         />
 
-        {{-- Flash messages --}}
-        @if (session('error'))
-            <x-alert type="danger">{{ session('error') }}</x-alert>
-        @endif
-        @if ($errors->any())
-            <x-alert type="danger" title="Verifique os campos">
-                <ul class="mt-1 list-disc pl-4">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </x-alert>
-        @endif
+        <x-flash />
 
         <x-card size="lg" class="mx-auto w-full max-w-xl">
             <form

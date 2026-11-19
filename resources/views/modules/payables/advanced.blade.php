@@ -11,13 +11,7 @@
             </x-slot:actions>
         </x-page-header>
 
-        {{-- Flash messages --}}
-        @if (session('success'))
-            <x-alert type="success">{{ session('success') }}</x-alert>
-        @endif
-        @if (session('warning'))
-            <x-alert type="warning">{{ session('warning') }}</x-alert>
-        @endif
+        <x-flash />
 
         {{-- Pílulas de período (due_date) --}}
         <nav aria-label="Selecionar período" class="flex flex-col gap-3">
@@ -135,7 +129,7 @@
                                 <th class="px-5 py-3 text-right">Ações</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-cin2">
+                        <tbody class="divide-y divide-line">
                             @foreach ($payables as $payable)
                                 @php $status = $payable->status($today); @endphp
                                 <tr class="{{ $status === 'vencida' ? 'bg-red1/50 hover:bg-red1/70' : 'hover:bg-surface-2' }}">

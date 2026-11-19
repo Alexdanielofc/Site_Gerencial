@@ -7,16 +7,7 @@
             back-label="Voltar a Vendas"
         />
 
-        {{-- Flash messages --}}
-        @if (session('success'))
-            <x-alert type="success">{{ session('success') }}</x-alert>
-        @endif
-        @if (session('warning'))
-            <x-alert type="warning">{{ session('warning') }}</x-alert>
-        @endif
-        @if (session('error'))
-            <x-alert type="danger">{{ session('error') }}</x-alert>
-        @endif
+        <x-flash />
 
         {{-- Pílulas: apenas 3 meses --}}
         <nav aria-label="Selecionar mês" class="flex flex-wrap gap-2">
@@ -34,16 +25,6 @@
             @csrf
             @method('PUT')
 
-            @if ($errors->any())
-                <x-alert type="danger" title="Verifique os campos">
-                    <ul class="mt-1 list-disc pl-4">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </x-alert>
-            @endif
-
             <x-card size="none">
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -54,21 +35,32 @@
                                 <th class="px-5 py-3 text-right">Expectativa (R$)</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-cin2">
+                        <tbody class="divide-y divide-line">
                             @foreach ($days as $day)
                                 <tr class="hover:bg-surface-2">
                                     <td class="px-5 py-3 tabular-nums text-ink">{{ $day['label'] }}</td>
                                     <td class="px-5 py-3 text-ink-soft">{{ $day['weekday'] }}</td>
                                     <td class="px-5 py-3 text-right">
+                                        @php
+                                            $fieldKey = "expectations.{$day['date']}";
+                                            $hasError = $errors->has($fieldKey);
+                                            $val = old($fieldKey, $day['amount']);
+                                        @endphp
                                         <input
                                             type="text"
                                             inputmode="decimal"
                                             name="expectations[{{ $day['date'] }}]"
-                                            value="{{ $day['amount'] }}"
+                                            value="{{ $val }}"
                                             placeholder="0,00"
-                                            class="w-32 rounded border border-line px-2.5 py-1.5 text-right tabular-nums text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                                            class="w-32 rounded border px-2.5 py-1.5 text-right tabular-nums text-ink focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent {{ $hasError ? 'border-red6' : 'border-line' }}"
                                             aria-label="Expectativa de {{ $day['label'] }}"
+                                            @if ($hasError) aria-describedby="err-{{ $day['date'] }}" @endif
                                         >
+                                        @if ($hasError)
+                                            <p id="err-{{ $day['date'] }}" class="mt-1 text-xs text-red6" role="alert">
+                                                {{ $errors->first($fieldKey) }}
+                                            </p>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

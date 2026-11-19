@@ -237,7 +237,7 @@
                                 @if ($upcomingPayables->isEmpty())
                                     <p class="mt-3 text-sm text-ink-soft">Nenhuma conta com vencimento nos próximos 7 dias.</p>
                                 @else
-                                    <ul class="mt-3 divide-y divide-cin2 text-sm">
+                                    <ul class="mt-3 divide-y divide-line text-sm">
                                         @foreach ($upcomingPayables as $payable)
                                             <li class="flex items-center justify-between py-2 text-xs">
                                                 <div class="flex flex-col">

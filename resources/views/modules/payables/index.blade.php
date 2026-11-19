@@ -11,25 +11,7 @@
             </x-slot:actions>
         </x-page-header>
 
-        {{-- Flash messages --}}
-        @if (session('success'))
-            <x-alert type="success">{{ session('success') }}</x-alert>
-        @endif
-        @if (session('warning'))
-            <x-alert type="warning">{{ session('warning') }}</x-alert>
-        @endif
-        @if (session('error'))
-            <x-alert type="danger">{{ session('error') }}</x-alert>
-        @endif
-        @if ($errors->any())
-            <x-alert type="danger" title="Verifique os campos">
-                <ul class="mt-1 list-disc pl-4">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </x-alert>
-        @endif
+        <x-flash />
 
         {{-- Indicadores --}}
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -163,7 +145,7 @@
                                     <th class="px-5 py-3 text-right">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-cin2">
+                            <tbody class="divide-y divide-line">
                                 @foreach ($attentionPayables as $payable)
                                     @php $status = $payable->status($today); @endphp
                                     <tr class="{{ $status === 'vencida' ? 'bg-red1/40 hover:bg-red1/60' : 'hover:bg-surface-2' }}">

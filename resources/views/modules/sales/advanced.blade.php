@@ -7,10 +7,7 @@
             back-label="Voltar a Vendas"
         />
 
-        {{-- Flash messages --}}
-        @if (session('success'))
-            <x-alert type="success">{{ session('success') }}</x-alert>
-        @endif
+        <x-flash />
 
         {{-- Pílulas de período --}}
         <nav aria-label="Selecionar período" class="flex flex-col gap-3">
@@ -74,7 +71,7 @@
                             <th class="px-5 py-3"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-cin2">
+                    <tbody class="divide-y divide-line">
                         @foreach ($days as $day)
                             <tr class="{{ $day['is_future'] ? 'opacity-50' : 'hover:bg-surface-2' }}">
                                 <td class="px-5 py-3 tabular-nums text-ink">{{ $day['label'] }}</td>

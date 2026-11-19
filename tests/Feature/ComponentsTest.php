@@ -1,5 +1,8 @@
 <?php
 
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
+
 it('renders a card with the chosen tag and size', function () {
     $this->blade('<x-card as="section" size="lg">Conteúdo</x-card>')
         ->assertSee('<section', false)
@@ -89,4 +92,50 @@ it('renders the theme toggle button with the correct aria attributes', function 
         ->assertSee('data-theme-toggle', false)
         ->assertSee('aria-label="Alternar tema"', false)
         ->assertSee('aria-pressed="false"', false);
+});
+
+it('ensures dark theme does not redefine branco', function () {
+    $css = file_get_contents(resource_path('css/app.css'));
+    expect($css)->not->toBeEmpty();
+
+    preg_match("/html\[data-theme='dark'\]\s*\{([^}]+)\}/s", $css, $matches);
+    expect($matches)->not->toBeEmpty();
+
+    $darkBlock = $matches[1];
+    expect($darkBlock)->not->toContain('--branco');
+});
+
+it('renders flash messages for each type and escapes html content', function () {
+    session()->flash('success', 'Registro <b>salvo</b> com sucesso.');
+    session()->flash('error', 'Ocorreu um erro.');
+    session()->flash('warning', 'Atenção necessária.');
+    session()->flash('info', 'Informação do sistema.');
+
+    $this->blade('<x-flash />')
+        ->assertSee('Registro &lt;b&gt;salvo&lt;/b&gt; com sucesso.', false)
+        ->assertSee('Ocorreu um erro.')
+        ->assertSee('Atenção necessária.')
+        ->assertSee('Informação do sistema.')
+        ->assertDontSee('<b>salvo</b>', false);
+});
+
+it('does not render anything when there are no flash messages or errors', function () {
+    $rendered = (string) $this->blade('<x-flash />');
+    expect(trim($rendered))->toBeEmpty();
+});
+
+it('renders validation errors list when except-errors is false and hides when true', function () {
+    $viewErrors = new ViewErrorBag;
+    $bag = new MessageBag(['campo' => ['Campo obrigatório']]);
+    $viewErrors->put('default', $bag);
+
+    session()->flash('errors', $viewErrors);
+
+    $this->blade('<x-flash />')
+        ->assertSee('Verifique os campos')
+        ->assertSee('Campo obrigatório');
+
+    $this->blade('<x-flash :except-errors="true" />')
+        ->assertDontSee('Verifique os campos')
+        ->assertDontSee('Campo obrigatório');
 });

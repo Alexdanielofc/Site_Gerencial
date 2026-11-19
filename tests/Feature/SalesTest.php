@@ -434,3 +434,145 @@ it('shows saved values in the expectations form', function () {
         ->assertOk()
         ->assertSee('999,99');
 });
+
+// ── Validações estritas de expectativas (Fase 2) ──────────────────────────────
+
+it('fails validation when expectation has non-numeric text', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->from(route('sales.expectations.edit', ['ano' => 2026, 'mes' => 6]))
+        ->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+            'expectations' => [
+                '2026-06-01' => 'abc',
+            ],
+            'ano' => 2026,
+            'mes' => 6,
+        ]);
+
+    $response->assertRedirect(route('sales.expectations.edit', ['ano' => 2026, 'mes' => 6]));
+    $response->assertSessionHasErrors('expectations.2026-06-01');
+    expect(SalesExpectation::count())->toBe(0);
+});
+
+it('fails validation when expectation is negative', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+        'expectations' => [
+            '2026-06-01' => '-10,00',
+        ],
+        'ano' => 2026,
+        'mes' => 6,
+    ]);
+
+    $response->assertSessionHasErrors('expectations.2026-06-01');
+    expect(SalesExpectation::count())->toBe(0);
+});
+
+it('fails validation when expectation exceeds maximum', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+        'expectations' => [
+            '2026-06-01' => '99999999999999',
+        ],
+        'ano' => 2026,
+        'mes' => 6,
+    ]);
+
+    $response->assertSessionHasErrors('expectations.2026-06-01');
+    expect(SalesExpectation::count())->toBe(0);
+});
+
+it('fails validation when expectation is an injected array', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+        'expectations' => [
+            '2026-06-01' => ['malicious' => 'data'],
+        ],
+        'ano' => 2026,
+        'mes' => 6,
+    ]);
+
+    $response->assertSessionHasErrors('expectations.2026-06-01');
+    expect(SalesExpectation::count())->toBe(0);
+});
+
+it('fails validation when a date key is outside the displayed month', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+        'expectations' => [
+            '2026-06-01' => '100,00',
+            '2026-07-01' => '100,00',
+        ],
+        'ano' => 2026,
+        'mes' => 6,
+    ]);
+
+    $response->assertSessionHasErrors('expectations.2026-07-01');
+    expect(SalesExpectation::count())->toBe(0);
+});
+
+it('redirects when month is outside the 3-month window', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 1]), [
+        'expectations' => [
+            '2026-01-01' => '100,00',
+        ],
+        'ano' => 2026,
+        'mes' => 1,
+    ]);
+
+    $response->assertRedirect(route('sales.expectations.edit', ['ano' => 2026, 'mes' => 6]));
+    $response->assertSessionHas('warning');
+    expect(SalesExpectation::count())->toBe(0);
+});
+
+it('does not save any record if a single day has validation error (atomic transaction)', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+        'expectations' => [
+            '2026-06-01' => '100,00',
+            '2026-06-02' => 'invalido',
+            '2026-06-03' => '200,00',
+        ],
+        'ano' => 2026,
+        'mes' => 6,
+    ]);
+
+    $response->assertSessionHasErrors('expectations.2026-06-02');
+    expect(SalesExpectation::count())->toBe(0);
+});
+
+it('accepts numbers in diverse valid formats like 1.234,56 and 1234.5', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $response = $this->put(route('sales.expectations.update', ['ano' => 2026, 'mes' => 6]), [
+        'expectations' => [
+            '2026-06-01' => '1.234,56',
+            '2026-06-02' => '1234,56',
+            '2026-06-03' => '1234.5',
+        ],
+        'ano' => 2026,
+        'mes' => 6,
+    ]);
+
+    $response->assertRedirect();
+    expect(SalesExpectation::where('expectation_date', '2026-06-01')->value('amount'))->toBe('1234.56');
+    expect(SalesExpectation::where('expectation_date', '2026-06-02')->value('amount'))->toBe('1234.56');
+    expect(SalesExpectation::where('expectation_date', '2026-06-03')->value('amount'))->toBe('1234.50');
+});
+
+it('returns 404 when edit sale route receives an invalid date format', function () {
+    $this->get('/modulos/vendas/dia/2026-02-30/editar')->assertNotFound();
+    $this->get('/modulos/vendas/dia/invalido/editar')->assertNotFound();
+});
+
+it('returns 404 when update sale route receives an invalid date format', function () {
+    $this->put('/modulos/vendas/dia/2026-02-30', ['amount' => '100,00'])->assertNotFound();
+    $this->put('/modulos/vendas/dia/invalido', ['amount' => '100,00'])->assertNotFound();
+});

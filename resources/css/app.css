@@ -47,6 +47,8 @@
     --ink-soft: #4b5563;
     --accent: #2563eb;
     --chrome: #1f2937;
+    --chrome-ink: #d1d5db;
+    --chrome-line: #4b5563;
 }
 
 @theme inline {
@@ -84,10 +86,12 @@
     --color-ink-soft: var(--ink-soft);
     --color-accent: var(--accent);
     --color-chrome: var(--chrome);
+    --color-chrome-ink: var(--chrome-ink);
+    --color-chrome-line: var(--chrome-line);
 }
 
 body {
-    color: var(--cin8);
+    color: var(--ink);
     font-family: 'IBM Plex Sans', sans-serif;
     background-color: var(--bg);
     background-image: radial-gradient(circle, var(--dot) 1px, transparent 1px);
@@ -145,14 +149,8 @@ html[data-theme='dark'] {
     --ink-soft: #9fb0c8;
     --accent: #93c5fd;
     --chrome: #070d19;
-
-    /* Tokens legados (mantém bg-cin1, text-cin6, text-cin8 etc. funcionando) */
-    --cin8: #e6edf7;
-    --cin6: #9fb0c8;
-    --cin3: #26344f;
-    --cin2: #26344f;
-    --cin1: #16213a;
-    --branco: #111a2e;
+    --chrome-ink: #d1d5db;
+    --chrome-line: #26344f;
 
     /* Azuis de marca — mantém bg-blu6 intacto no modo escuro */
     --blu1: #0f1f3d;
@@ -164,6 +162,7 @@ html[data-theme='dark'] {
     --grn7: #86efac;
     --red1: #2d1215;
     --red2: #7f1d1d;
+    --red6: #f87171;
     --red7: #fca5a5;
     --yel1: #2b2210;
     --yel2: #854d0e;

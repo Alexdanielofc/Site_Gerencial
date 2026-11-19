@@ -62,9 +62,9 @@ class SalesController extends Controller
      */
     public function edit(string $date, PeriodRequest $request): View
     {
-        $carbon = Carbon::createFromFormat('Y-m-d', $date);
+        $carbon = Carbon::createFromFormat('!Y-m-d', $date);
 
-        abort_if(! $carbon || $carbon->toDateString() !== $date, 404);
+        abort_if(! $carbon || $carbon->format('Y-m-d') !== $date, 404);
         abort_if($carbon->isFuture(), 404);
 
         $sale = DailySale::query()
@@ -154,9 +154,9 @@ class SalesController extends Controller
      */
     public function update(UpdateSaleRequest $request, string $date): RedirectResponse
     {
-        $carbon = Carbon::createFromFormat('Y-m-d', $date);
+        $carbon = Carbon::createFromFormat('!Y-m-d', $date);
 
-        abort_if(! $carbon || $carbon->toDateString() !== $date, 404);
+        abort_if(! $carbon || $carbon->format('Y-m-d') !== $date, 404);
         abort_if($carbon->isFuture(), 404);
 
         DailySale::updateOrCreate(

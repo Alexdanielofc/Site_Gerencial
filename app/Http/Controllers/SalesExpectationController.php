@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PeriodRequest;
+use App\Http\Requests\UpdateSalesExpectationsRequest;
 use App\Models\SalesExpectation;
-use App\Support\Money;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SalesExpectationController extends Controller
@@ -17,24 +18,16 @@ class SalesExpectationController extends Controller
      */
     public function edit(PeriodRequest $request): View|RedirectResponse
     {
-        // Only 3 months allowed: previous, current, next
         $today = today();
-        $allowed = [
-            $today->copy()->subMonthNoOverflow()->startOfMonth(),
-            $today->copy()->startOfMonth(),
-            $today->copy()->addMonthNoOverflow()->startOfMonth(),
-        ];
-
         $monthStart = $request->monthStart();
-        $isAllowed = collect($allowed)->contains(
-            fn (Carbon $m) => $m->year === $monthStart->year && $m->month === $monthStart->month
-        );
 
-        if (! $isAllowed) {
+        if (! UpdateSalesExpectationsRequest::isMonthAllowed($monthStart, $today)) {
             return redirect()
                 ->route('sales.expectations.edit', ['ano' => $today->year, 'mes' => $today->month])
                 ->with('warning', 'O período selecionado não está disponível. Exibindo o mês atual.');
         }
+
+        $allowed = UpdateSalesExpectationsRequest::allowedMonths($today);
 
         // Build all days of the selected month
         $monthEnd = $monthStart->copy()->endOfMonth();
@@ -74,55 +67,35 @@ class SalesExpectationController extends Controller
     /**
      * PUT /modulos/vendas/expectativas
      */
-    public function update(PeriodRequest $request): RedirectResponse
+    public function update(UpdateSalesExpectationsRequest $request): RedirectResponse
     {
         $today = today();
-        $allowed = [
-            $today->copy()->subMonthNoOverflow()->startOfMonth(),
-            $today->copy()->startOfMonth(),
-            $today->copy()->addMonthNoOverflow()->startOfMonth(),
-        ];
-
         $monthStart = $request->monthStart();
-        $isAllowed = collect($allowed)->contains(
-            fn (Carbon $m) => $m->year === $monthStart->year && $m->month === $monthStart->month
-        );
 
-        if (! $isAllowed) {
+        if (! UpdateSalesExpectationsRequest::isMonthAllowed($monthStart, $today)) {
             return redirect()
                 ->route('sales.expectations.edit', ['ano' => $today->year, 'mes' => $today->month])
-                ->with('error', 'Período inválido.');
+                ->with('warning', 'O período selecionado não está disponível. Exibindo o mês atual.');
         }
 
-        $monthEnd = $monthStart->copy()->endOfMonth();
-        $rawValues = $request->input('expectations', []);
-
-        // Validate each key/value pair
+        $validatedExpectations = $request->validated('expectations');
+        $now = now();
         $rows = [];
-        foreach ($rawValues as $dateStr => $rawAmount) {
-            // Date must be within the displayed month
-            $date = Carbon::createFromFormat('Y-m-d', $dateStr);
-            if (! $date || $date->toDateString() !== $dateStr) {
-                continue;
-            }
-            if ($date->lt($monthStart) || $date->gt($monthEnd)) {
-                continue;
-            }
 
-            $decimal = Money::parseToDecimal($rawAmount);
-            $amount = ($decimal === null || $decimal === '') ? '0.00' : $decimal;
-
+        foreach ($validatedExpectations as $dateStr => $amount) {
             $rows[] = [
                 'expectation_date' => $dateStr,
                 'amount' => $amount,
-                'updated_at' => now(),
-                'created_at' => now(),
+                'updated_at' => $now,
+                'created_at' => $now,
             ];
         }
 
-        if (! empty($rows)) {
-            SalesExpectation::upsert($rows, ['expectation_date'], ['amount', 'updated_at']);
-        }
+        DB::transaction(function () use ($rows): void {
+            if (! empty($rows)) {
+                SalesExpectation::upsert($rows, ['expectation_date'], ['amount', 'updated_at']);
+            }
+        });
 
         return redirect()
             ->route('sales.expectations.edit', ['ano' => $monthStart->year, 'mes' => $monthStart->month])
