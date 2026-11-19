@@ -158,3 +158,25 @@ it('renders the spinner icon with animate-spin', function () {
     $this->blade('<x-icons.spinner />')
         ->assertSee('animate-spin', false);
 });
+
+it('renders period pills with years, months and extra params', function () {
+    $years = collect([
+        ['year' => 2025, 'month' => 12],
+        ['year' => 2026, 'month' => 6],
+    ]);
+    $months = collect([
+        ['month' => 5, 'label' => 'Maio'],
+        ['month' => 6, 'label' => 'Junho'],
+    ]);
+
+    $this->blade(
+        '<x-period-pills :years="$years" :months="$months" :selected-year="2026" :selected-month="6" route="invoices.advanced" :params="[\'busca\' => \'termo\', \'vazio\' => \'\']" />',
+        compact('years', 'months')
+    )
+        ->assertSee('2025')
+        ->assertSee('2026')
+        ->assertSee('Maio')
+        ->assertSee('Junho')
+        ->assertSee('busca=termo', false)
+        ->assertDontSee('vazio=', false);
+});

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreSaleRequest;
 use App\Http\Requests\UpdateSaleRequest;
 use App\Models\DailySale;
 use App\Models\SalesExpectation;
+use App\Support\PeriodPills;
 use App\Support\SubmissionGuard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -100,29 +101,11 @@ class SalesController extends Controller
         $today = today();
 
         // Build periods list (sales + expectations + current month)
-        $monthsByYear = DailySale::periodsWithRecords()
-            ->push(['year' => $today->year, 'month' => $today->month])
-            ->unique(fn (array $p) => $p['year'].'-'.$p['month'])
-            ->groupBy('year')
-            ->map(fn ($periods) => $periods->pluck('month')->sort()->values())
-            ->sortKeys();
-
-        $years = $monthsByYear->map(function ($months, int $year) use ($monthStart) {
-            return [
-                'year' => $year,
-                'month' => match (true) {
-                    $year === $monthStart->year => $monthStart->month,
-                    $year === today()->year => today()->month,
-                    $months->contains($monthStart->month) => $monthStart->month,
-                    default => $months->last(),
-                },
-            ];
-        })->values();
-
-        $months = $monthsByYear->get($monthStart->year, collect())->map(fn (int $month) => [
-            'month' => $month,
-            'label' => Str::ucfirst(Carbon::create(2000, $month, 1)->translatedFormat('F')),
-        ]);
+        ['years' => $years, 'months' => $months] = PeriodPills::build(
+            DailySale::periodsWithRecords(),
+            $monthStart,
+            $today
+        );
 
         // Indicators for the selected period
         $indicators = DailySale::indicators($monthStart, $today);

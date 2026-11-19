@@ -6,14 +6,12 @@ use App\Http\Requests\PeriodRequest;
 use App\Http\Requests\StorePayableRequest;
 use App\Http\Requests\UpdatePayableRequest;
 use App\Models\Payable;
+use App\Support\PeriodPills;
 use App\Support\SubmissionGuard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class PayableController extends Controller
 {
@@ -91,29 +89,11 @@ class PayableController extends Controller
         $today = today();
 
         // Pílulas: períodos com registro por due_date + mês atual
-        $monthsByYear = Payable::periodsWithRecords()
-            ->push(['year' => $today->year, 'month' => $today->month])
-            ->unique(fn (array $p) => $p['year'].'-'.$p['month'])
-            ->groupBy('year')
-            ->map(fn (Collection $periods) => $periods->pluck('month')->sort()->values())
-            ->sortKeys();
-
-        $years = $monthsByYear->map(function (Collection $months, int $year) use ($monthStart) {
-            return [
-                'year' => $year,
-                'month' => match (true) {
-                    $year === $monthStart->year => $monthStart->month,
-                    $year === today()->year => today()->month,
-                    $months->contains($monthStart->month) => $monthStart->month,
-                    default => $months->last(),
-                },
-            ];
-        })->values();
-
-        $months = $monthsByYear->get($monthStart->year, collect())->map(fn (int $month) => [
-            'month' => $month,
-            'label' => Str::ucfirst(Carbon::create(2000, $month, 1)->translatedFormat('F')),
-        ]);
+        ['years' => $years, 'months' => $months] = PeriodPills::build(
+            Payable::periodsWithRecords(),
+            $monthStart,
+            $today
+        );
 
         $statusFilter = (string) $request->input('situacao', 'todas');
         $search = trim((string) $request->input('busca', ''));

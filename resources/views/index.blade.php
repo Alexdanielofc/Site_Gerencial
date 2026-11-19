@@ -10,31 +10,13 @@
                 </h1>
             </div>
 
-            <nav aria-label="Selecionar período" class="flex flex-col gap-3">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="w-12 text-sm font-medium text-ink-soft">Ano</span>
-                    @foreach ($years as $item)
-                        <x-pill
-                            :href="route('site.index', ['ano' => $item['year'], 'mes' => $item['month']])"
-                            :selected="$item['year'] === $monthStart->year"
-                        >
-                            {{ $item['year'] }}
-                        </x-pill>
-                    @endforeach
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="w-12 text-sm font-medium text-ink-soft">Mês</span>
-                    @foreach ($months as $item)
-                        <x-pill
-                            :href="route('site.index', ['ano' => $monthStart->year, 'mes' => $item['month']])"
-                            :selected="$item['month'] === $monthStart->month"
-                        >
-                            {{ $item['label'] }}
-                        </x-pill>
-                    @endforeach
-                </div>
-            </nav>
+            <x-period-pills
+                :years="$years"
+                :months="$months"
+                :selected-year="$monthStart->year"
+                :selected-month="$monthStart->month"
+                route="site.index"
+            />
         </header>
 
         {{-- 3 Sections dos Módulos --}}

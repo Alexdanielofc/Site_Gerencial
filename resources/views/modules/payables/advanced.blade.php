@@ -14,31 +14,14 @@
         <x-flash />
 
         {{-- Pílulas de período (due_date) --}}
-        <nav aria-label="Selecionar período" class="flex flex-col gap-3">
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-ink-soft">Ano</span>
-                @foreach ($years as $item)
-                    <x-pill
-                        :href="route('payables.advanced', array_filter(['ano' => $item['year'], 'mes' => $item['month'], 'situacao' => $statusFilter !== 'todas' ? $statusFilter : null, 'busca' => $search]))"
-                        :selected="$item['year'] === $monthStart->year"
-                    >
-                        {{ $item['year'] }}
-                    </x-pill>
-                @endforeach
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="w-12 text-sm font-medium text-ink-soft">Mês</span>
-                @foreach ($months as $item)
-                    <x-pill
-                        :href="route('payables.advanced', array_filter(['ano' => $monthStart->year, 'mes' => $item['month'], 'situacao' => $statusFilter !== 'todas' ? $statusFilter : null, 'busca' => $search]))"
-                        :selected="$item['month'] === $monthStart->month"
-                    >
-                        {{ $item['label'] }}
-                    </x-pill>
-                @endforeach
-            </div>
-        </nav>
+        <x-period-pills
+            :years="$years"
+            :months="$months"
+            :selected-year="$monthStart->year"
+            :selected-month="$monthStart->month"
+            route="payables.advanced"
+            :params="['situacao' => $statusFilter !== 'todas' ? $statusFilter : null, 'busca' => $search]"
+        />
 
         {{-- Cards do período em R$: total, pago, pendente, vencido --}}
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

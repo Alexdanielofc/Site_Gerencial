@@ -6,11 +6,9 @@ use App\Http\Requests\PeriodRequest;
 use App\Models\DailySale;
 use App\Models\Invoice;
 use App\Models\Payable;
+use App\Support\PeriodPills;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -22,31 +20,11 @@ class DashboardController extends Controller
         $isCurrentMonth = $monthStart->year === $today->year && $monthStart->month === $today->month;
 
         // Periods with records from ANY module + current month
-        $monthsByYear = DailySale::periodsWithRecords()
+        $recordPeriods = DailySale::periodsWithRecords()
             ->concat(Invoice::periodsWithRecords())
-            ->concat(Payable::periodsWithRecords())
-            ->push(['year' => $today->year, 'month' => $today->month])
-            ->unique(fn (array $period) => $period['year'].'-'.$period['month'])
-            ->groupBy('year')
-            ->map(fn (Collection $periods) => $periods->pluck('month')->sort()->values())
-            ->sortKeys();
+            ->concat(Payable::periodsWithRecords());
 
-        $years = $monthsByYear->map(function (Collection $months, int $year) use ($monthStart, $today) {
-            return [
-                'year' => $year,
-                'month' => match (true) {
-                    $year === $monthStart->year => $monthStart->month,
-                    $year === $today->year => $today->month,
-                    $months->contains($monthStart->month) => $monthStart->month,
-                    default => $months->last(),
-                },
-            ];
-        })->values();
-
-        $months = $monthsByYear->get($monthStart->year, collect())->map(fn (int $month) => [
-            'month' => $month,
-            'label' => Str::ucfirst(Carbon::create(2000, $month, 1)->translatedFormat('F')),
-        ]);
+        ['years' => $years, 'months' => $months] = PeriodPills::build($recordPeriods, $monthStart, $today);
 
         // ── 1. Vendas e metas ───────────────────────────────────────────────
         $salesIndicators = DailySale::indicators($monthStart, $today);
