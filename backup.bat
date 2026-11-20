@@ -1,59 +1,118 @@
 @echo off
+setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 > nul
-echo ===================================================
-echo           Backup do Banco de Dados
-echo               Site Gerencial
-echo ===================================================
-echo.
+cd /d "%~dp0"
 
-REM Garante a pasta backups
-if not exist "backups" mkdir backups
+set AUTO_MODE=0
+if /i "%~1"=="auto" set AUTO_MODE=1
 
-REM Gera timestamp no formato AAAA-MM-DD_HHMM
-for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value 2^>nul') do set datetime=%%I
-if defined datetime (
-    set ANO=%datetime:~0,4%
-    set MES=%datetime:~4,2%
-    set DIA=%datetime:~6,2%
-    set HORA=%datetime:~8,2%
-    set MIN=%datetime:~10,2%
-) else (
-    set ANO=%date:~6,4%
-    set MES=%date:~3,2%
-    set DIA=%date:~0,2%
-    set HORA=%time:~0,2%
-    set MIN=%time:~3,2%
-)
-set TIMESTAMP=%ANO%-%MES%-%DIA%_%HORA%%MIN%
-set BACKUP_FILE=backups\site_gerencial_%TIMESTAMP%.sql
+if not exist "backups" mkdir "backups"
+set LOG_FILE=backups\backup.log
 
-set CONF_FILE=%USERPROFILE%\.site_gerencial_mysql.cnf
-
-if not exist "%CONF_FILE%" (
-    echo [INFO] Arquivo de credenciais seguro não encontrado em %CONF_FILE%
-    echo Criando modelo seguro de credenciais fora do repositório...
-    (
-        echo [client]
-        echo user=root
-        echo password=
-        echo host=127.0.0.1
-        echo port=3306
-    ) > "%CONF_FILE%"
-    echo Arquivo criado em: %CONF_FILE%
-    echo Configure seu usuário e senha nele se necessário.
+if %AUTO_MODE% EQU 0 (
+    echo ===================================================
+    echo           Backup do Banco de Dados
+    echo               Site Gerencial
+    echo ===================================================
     echo.
 )
 
-echo Gerando dump do banco 'site_gerencial'...
-mysqldump --defaults-extra-file="%CONF_FILE%" --single-transaction --default-character-set=utf8mb4 site_gerencial > "%BACKUP_FILE%"
-
-if %ERRORLEVEL% EQU 0 (
-    echo [SUCESSO] Backup gravado com sucesso em:
-    echo %BACKUP_FILE%
-) else (
-    echo [ERRO] Ocorreu uma falha ao gerar o backup.
-    echo Verifique se o MySQL está rodando e se as credenciais em %CONF_FILE% estão corretas.
+REM 1) Timestamp via PowerShell (yyyy-MM-dd_HHmm)
+for /f "usebackq delims=" %%T in (`powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd_HHmm'"`) do set TIMESTAMP=%%T
+if not defined TIMESTAMP (
+    call :Log "[ERRO] Nao foi possivel obter a data/hora via PowerShell."
+    goto :Fail
 )
 
-echo.
-pause
+set BACKUP_FILE=backups\site_gerencial_%TIMESTAMP%.sql
+set CONF_FILE=%USERPROFILE%\.site_gerencial_mysql.cnf
+
+REM 2) Verificar arquivo de credenciais fora do projeto (nunca criar com root)
+if not exist "%CONF_FILE%" (
+    (
+        echo [client]
+        echo user=site_gerencial
+        echo password=COLOQUE_A_SENHA_AQUI
+        echo host=127.0.0.1
+        echo port=3306
+    ) > "%CONF_FILE%"
+    call :Log "[ACAO NECESSARIA] Arquivo modelo de credenciais criado em: %CONF_FILE%"
+    call :Log "Edite esse arquivo e substitua COLOQUE_A_SENHA_AQUI pela senha real do usuario do MySQL antes de executar o backup novamente."
+    goto :Fail
+)
+
+findstr /i /c:"COLOQUE_A_SENHA_AQUI" "%CONF_FILE%" >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    call :Log "[ERRO] O arquivo de credenciais %CONF_FILE% ainda contem o marcador COLOQUE_A_SENHA_AQUI."
+    call :Log "Abra o arquivo e informe a senha real do banco antes de gerar o backup."
+    goto :Fail
+)
+
+REM 3) Localizar mysqldump no PATH ou em C:\Program Files\MySQL\MySQL Server *\bin
+set MYSQLDUMP_EXE=
+for /f "usebackq delims=" %%M in (`powershell -NoProfile -Command ^
+    "$cmd = Get-Command mysqldump -ErrorAction SilentlyContinue; " ^
+    "if ($cmd) { Write-Output $cmd.Source; exit 0 }; " ^
+    "$found = Get-ChildItem -Path 'C:\Program Files\MySQL\MySQL Server *\bin\mysqldump.exe' -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1; " ^
+    "if ($found) { Write-Output $found.FullName; exit 0 }; " ^
+    "exit 1"`) do set MYSQLDUMP_EXE=%%M
+
+if not defined MYSQLDUMP_EXE (
+    call :Log "[ERRO] O utilitario mysqldump.exe nao foi encontrado no PATH nem em C:\Program Files\MySQL\MySQL Server *\bin."
+    goto :Fail
+)
+
+call :Log "Gerando dump do banco 'site_gerencial' em %BACKUP_FILE% ..."
+"%MYSQLDUMP_EXE%" --defaults-extra-file="%CONF_FILE%" --single-transaction --routines --triggers --default-character-set=utf8mb4 site_gerencial > "%BACKUP_FILE%" 2>nul
+set DUMP_EXIT=%ERRORLEVEL%
+
+REM 4) Validar arquivo (> 0 bytes e contendo 'Dump completed')
+powershell -NoProfile -Command ^
+    "$f = '%BACKUP_FILE%'; " ^
+    "if (-not (Test-Path $f)) { exit 1 }; " ^
+    "$item = Get-Item $f; " ^
+    "if ($item.Length -le 0) { exit 2 }; " ^
+    "$tail = Get-Content $f -Tail 10 -ErrorAction SilentlyContinue | Out-String; " ^
+    "if ($tail -notmatch 'Dump completed') { exit 3 }; " ^
+    "exit 0"
+set VALID_STATUS=%ERRORLEVEL%
+
+if %DUMP_EXIT% NEQ 0 set VALID_STATUS=9
+
+if %VALID_STATUS% NEQ 0 (
+    if exist "%BACKUP_FILE%" del /f /q "%BACKUP_FILE%" >nul 2>&1
+    call :Log "[ERRO] Falha ao gerar ou validar o backup (codigo %VALID_STATUS%). O arquivo parcial foi removido."
+    call :Log "Verifique se o servico MySQL esta rodando e se as credenciais em %CONF_FILE% estao corretas."
+    goto :Fail
+)
+
+call :Log "[SUCESSO] Backup gravado e validado com sucesso em: %BACKUP_FILE%"
+
+REM 5) Rotacao: manter apenas os 30 backups mais recentes
+powershell -NoProfile -Command ^
+    "Get-ChildItem -Path 'backups\site_gerencial_*.sql' -ErrorAction SilentlyContinue | " ^
+    "Sort-Object LastWriteTime -Descending | " ^
+    "Select-Object -Skip 30 | " ^
+    "ForEach-Object { Remove-Item $_.FullName -Force }"
+
+if %AUTO_MODE% EQU 0 (
+    echo.
+    pause
+)
+exit /b 0
+
+:Fail
+if %AUTO_MODE% EQU 0 (
+    echo.
+    pause
+)
+exit /b 1
+
+:Log
+set MSG=%~1
+if %AUTO_MODE% EQU 1 (
+    echo [%DATE% %TIME%] %MSG%>> "%LOG_FILE%"
+) else (
+    echo %MSG%
+)
+exit /b 0
