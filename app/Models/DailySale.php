@@ -6,6 +6,7 @@ use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DailySale extends Model
 {
@@ -26,7 +27,7 @@ class DailySale extends Model
     {
         return (int) static::query()
             ->whereBetween('sale_date', [$start->toDateString(), $end->toDateString()])
-            ->sum(\DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
     }
 
     /**
@@ -34,11 +35,11 @@ class DailySale extends Model
      */
     public static function centsOn(Carbon $date): ?int
     {
-        $record = static::query()
+        $cents = static::query()
             ->where('sale_date', $date->toDateString())
-            ->first();
+            ->value(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
-        return $record ? (int) round($record->amount * 100) : null;
+        return $cents !== null ? (int) $cents : null;
     }
 
     /**

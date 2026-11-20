@@ -18,7 +18,7 @@ class Money
     }
 
     /**
-     * Calculate the percentage of $part over $total (both in cents).
+     * Calculate the percentage of $part over $total (both in cents), rounded to 1 decimal place.
      * Returns null if $total is zero or null.
      */
     public static function percentOf(?int $part, ?int $total): ?float
@@ -27,7 +27,7 @@ class Money
             return null;
         }
 
-        return ($part ?? 0) / $total * 100;
+        return round((($part ?? 0) / $total) * 100, 1);
     }
 
     /**

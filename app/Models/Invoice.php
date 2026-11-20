@@ -71,7 +71,7 @@ class Invoice extends Model
         return (int) static::query()
             ->active()
             ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
-            ->sum(DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
     }
 
     /**
@@ -104,7 +104,7 @@ class Invoice extends Model
         return (int) static::query()
             ->active()
             ->where('issue_date', $date->toDateString())
-            ->sum(DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
     }
 
     /**

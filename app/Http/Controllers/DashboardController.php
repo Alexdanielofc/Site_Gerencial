@@ -8,7 +8,6 @@ use App\Models\Invoice;
 use App\Models\Payable;
 use App\Support\PeriodPills;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -35,37 +34,38 @@ class DashboardController extends Controller
         $todayInvoiceCount = $isCurrentMonth ? Invoice::countOn($today) : 0;
         $todayInvoiceTotalCents = $isCurrentMonth ? Invoice::centsOn($today) : 0;
 
-        // ── 3. Contas a pagar (Resumo do período) ───────────────────────────
-        $payableTotalCents = (int) Payable::query()
+        // ── 3. Contas a pagar (Resumo do período em 1 consulta) ─────────────
+        $payableSummary = Payable::query()
             ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->sum(DB::raw('amount * 100'));
+            ->selectRaw('
+                COUNT(*) as period_count,
+                COALESCE(SUM(CAST(ROUND(amount * 100) AS SIGNED)), 0) as total_cents,
+                COALESCE(SUM(CASE WHEN paid_at IS NOT NULL THEN CAST(ROUND(amount * 100) AS SIGNED) ELSE 0 END), 0) as paid_cents,
+                COALESCE(SUM(CASE WHEN paid_at IS NULL THEN CAST(ROUND(amount * 100) AS SIGNED) ELSE 0 END), 0) as pending_cents
+            ')
+            ->toBase()
+            ->first();
 
-        $payablePaidCents = (int) Payable::query()
-            ->active()
-            ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->whereNotNull('paid_at')
-            ->sum(DB::raw('amount * 100'));
-
-        $payablePendingCents = (int) Payable::query()
-            ->active()
-            ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->whereNull('paid_at')
-            ->sum(DB::raw('amount * 100'));
-
-        $payablePeriodCount = Payable::query()
-            ->active()
-            ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->count();
+        $payablePeriodCount = (int) ($payableSummary->period_count ?? 0);
+        $payableTotalCents = (int) ($payableSummary->total_cents ?? 0);
+        $payablePaidCents = (int) ($payableSummary->paid_cents ?? 0);
+        $payablePendingCents = (int) ($payableSummary->pending_cents ?? 0);
 
         // ── 3.1 Contas a pagar (Bloco Atenção: independente do período) ─────
-        $overdueQuery = Payable::query()
+        $overdueSummary = Payable::query()
             ->active()
             ->whereNull('paid_at')
-            ->where('due_date', '<', $today->toDateString());
+            ->where('due_date', '<', $today->toDateString())
+            ->selectRaw('
+                COUNT(*) as overdue_count,
+                COALESCE(SUM(CAST(ROUND(amount * 100) AS SIGNED)), 0) as overdue_total_cents
+            ')
+            ->toBase()
+            ->first();
 
-        $overdueCount = $overdueQuery->count();
-        $overdueTotalCents = (int) $overdueQuery->sum(DB::raw('amount * 100'));
+        $overdueCount = (int) ($overdueSummary->overdue_count ?? 0);
+        $overdueTotalCents = (int) ($overdueSummary->overdue_total_cents ?? 0);
 
         $in7Days = $today->copy()->addDays(7);
         $upcomingPayables = Payable::query()

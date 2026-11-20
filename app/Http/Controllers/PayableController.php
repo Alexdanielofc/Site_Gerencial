@@ -37,7 +37,7 @@ class PayableController extends Controller
         $totalOpenCents = (int) Payable::query()
             ->active()
             ->whereNull('paid_at')
-            ->sum(DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
         // Indicador: Vencidas (ativas em aberto e vencimento < hoje)
         $overdueQuery = Payable::query()
@@ -46,7 +46,7 @@ class PayableController extends Controller
             ->where('due_date', '<', $today->toDateString());
 
         $overdueCount = $overdueQuery->count();
-        $overdueTotalCents = (int) $overdueQuery->sum(DB::raw('amount * 100'));
+        $overdueTotalCents = (int) $overdueQuery->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
         // Indicador: A vencer em até 7 dias (ativas em aberto e hoje <= due_date <= hoje+7)
         $upcomingQuery = Payable::query()
@@ -55,7 +55,7 @@ class PayableController extends Controller
             ->whereBetween('due_date', [$today->toDateString(), $in7Days->toDateString()]);
 
         $upcomingCount = $upcomingQuery->count();
-        $upcomingTotalCents = (int) $upcomingQuery->sum(DB::raw('amount * 100'));
+        $upcomingTotalCents = (int) $upcomingQuery->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
         return view('modules.payables.index', compact(
             'today',
@@ -124,27 +124,27 @@ class PayableController extends Controller
         $periodTotalCents = (int) Payable::query()
             ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
-            ->sum(DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
         $periodPaidCents = (int) Payable::query()
             ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNotNull('paid_at')
-            ->sum(DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
         $periodPendingCents = (int) Payable::query()
             ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNull('paid_at')
             ->where('due_date', '>=', $today->toDateString())
-            ->sum(DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
         $periodOverdueCents = (int) Payable::query()
             ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNull('paid_at')
             ->where('due_date', '<', $today->toDateString())
-            ->sum(DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
         // Query with filters
         $query = Payable::query()

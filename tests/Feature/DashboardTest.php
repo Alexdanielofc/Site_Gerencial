@@ -5,6 +5,7 @@ use App\Models\Invoice;
 use App\Models\Payable;
 use App\Models\SalesExpectation;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 it('renders the dashboard with all 3 module sections and links', function () {
     $response = $this->get('/');
@@ -118,4 +119,30 @@ it('displays payables indicators and independent attention block', function () {
 it('does not contain prohibited term papelaria in views (white-label rule)', function () {
     $response = $this->get('/');
     $response->assertDontSee('papelaria');
+});
+
+it('gives green tone when percentage rounds to 100.0% (e.g. 99.96%)', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    DailySale::create(['sale_date' => '2026-06-15', 'amount' => '99.96']);
+    SalesExpectation::create(['expectation_date' => '2026-06-15', 'amount' => '100.00']);
+
+    $indicators = DailySale::indicators(Carbon::create(2026, 6, 1), Carbon::create(2026, 6, 15));
+
+    expect($indicators['accrued_percent'])->toBe(100.0);
+    expect($indicators['accrued_percent_tone'])->toBe('green');
+});
+
+it('executes at most 16 database queries on the dashboard (reduced from 19 to 15)', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    $this->get('/?ano=2026&mes=6')->assertOk();
+
+    $queryCount = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($queryCount)->toBeLessThanOrEqual(16);
 });

@@ -71,10 +71,12 @@ it('formats null as dash', function () {
 
 // ── percentOf ───────────────────────────────────────────────────────────────
 
-it('calculates percentage correctly', function () {
+it('calculates percentage correctly and rounds to 1 decimal place', function () {
     expect(Money::percentOf(5000, 10000))->toBe(50.0);
     expect(Money::percentOf(10000, 10000))->toBe(100.0);
     expect(Money::percentOf(0, 10000))->toBe(0.0);
+    expect(Money::percentOf(3333, 10000))->toBe(33.3);
+    expect(Money::percentOf(9996, 10000))->toBe(100.0);
 });
 
 it('returns null when total is zero', function () {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SalesExpectation extends Model
 {
@@ -24,7 +25,7 @@ class SalesExpectation extends Model
     {
         return (int) static::query()
             ->whereBetween('expectation_date', [$start->toDateString(), $end->toDateString()])
-            ->sum(\DB::raw('amount * 100'));
+            ->sum(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
     }
 
     /**
@@ -32,10 +33,10 @@ class SalesExpectation extends Model
      */
     public static function centsOn(Carbon $date): ?int
     {
-        $record = static::query()
+        $cents = static::query()
             ->where('expectation_date', $date->toDateString())
-            ->first();
+            ->value(DB::raw('CAST(ROUND(amount * 100) AS SIGNED)'));
 
-        return $record ? (int) round($record->amount * 100) : null;
+        return $cents !== null ? (int) $cents : null;
     }
 }
