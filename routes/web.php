@@ -75,4 +75,7 @@ Route::prefix('configuracoes')->group(function (): void {
     Route::put('/backup/destino', [BackupController::class, 'updateExtraDestination'])->name('backup.extra.update');
     Route::post('/backup/destino/testar', [BackupController::class, 'testExtraDestination'])->name('backup.extra.test');
     Route::delete('/backup/destino', [BackupController::class, 'removeExtraDestination'])->name('backup.extra.remove');
+
+    Route::get('/backup/restaurar/{file}', [BackupController::class, 'confirmRestore'])->name('backup.restore.confirm');
+    Route::post('/backup/restaurar/{file}', [BackupController::class, 'restore'])->name('backup.restore');
 });

@@ -193,3 +193,78 @@ it('provides operational scripts for scheduling and removing automatic backups',
     expect($agendarPs1)->toContain('-TaskName $TaskName');
     expect($agendarPs1)->toContain("-TaskPath '\\'");
 });
+
+it('blocks restore routes with 404 and hides restore buttons when restore is disabled', function () {
+    config()->set('backup.restore_enabled', false);
+
+    $content = "-- MySQL dump\nCREATE TABLE `daily_sales` (id int);\nCREATE TABLE `sales_expectations` (id int);\nCREATE TABLE `invoices` (id int);\nCREATE TABLE `payables` (id int);\n-- Dump completed";
+    $file = $this->tempBackupDir.'/site_gerencial_2026-11-20_1200.sql';
+    file_put_contents($file, $content);
+
+    $this->get(route('backup.restore.confirm', ['file' => 'site_gerencial_2026-11-20_1200.sql']))
+        ->assertNotFound();
+
+    $this->post(route('backup.restore', ['file' => 'site_gerencial_2026-11-20_1200.sql']), [
+        'confirm_text' => 'RESTAURAR',
+    ])->assertNotFound();
+
+    $this->get(route('backup.settings'))
+        ->assertOk()
+        ->assertDontSee(route('backup.restore.confirm', ['file' => 'site_gerencial_2026-11-20_1200.sql']));
+});
+
+it('allows database restore when enabled, enforcing typing RESTAURAR and creating pre-restore backup', function () {
+    config()->set('backup.restore_enabled', true);
+
+    $content = "-- MySQL dump\nCREATE TABLE `daily_sales` (id int);\nCREATE TABLE `sales_expectations` (id int);\nCREATE TABLE `invoices` (id int);\nCREATE TABLE `payables` (id int);\n-- Dump completed";
+    $filename = 'site_gerencial_2026-11-20_1200.sql';
+    $file = $this->tempBackupDir.'/'.$filename;
+    file_put_contents($file, $content);
+
+    // 1. Restore button is visible in backup central
+    $this->get(route('backup.settings'))
+        ->assertOk()
+        ->assertSee(route('backup.restore.confirm', ['file' => $filename]));
+
+    // 2. Access confirmation view
+    $this->get(route('backup.restore.confirm', ['file' => $filename]))
+        ->assertOk()
+        ->assertSee('Confirmar Restauração')
+        ->assertSee($filename);
+
+    // 3. Reject if confirm_text is not 'RESTAURAR'
+    $this->post(route('backup.restore', ['file' => $filename]), [
+        'confirm_text' => 'sim',
+    ])->assertSessionHasErrors('confirm_text');
+
+    // 4. Fake both mysqldump (for security backup) and mysql (for restore)
+    Process::fake([
+        '*mysqldump*' => Process::result(output: $content),
+        '*mysql*' => Process::result(output: ''),
+    ]);
+
+    $this->post(route('backup.restore', ['file' => $filename]), [
+        'confirm_text' => 'RESTAURAR',
+    ])->assertRedirect(route('backup.settings'))
+        ->assertSessionHas('success');
+
+    // Verify restore status file
+    $statusFile = storage_path('app/backup-restore-status.json');
+    expect(file_exists($statusFile))->toBeTrue();
+
+    $statusData = json_decode((string) file_get_contents($statusFile), true);
+    expect($statusData['status'])->toBe('success');
+    expect($statusData['filename'])->toBe($filename);
+    expect($statusData['pre_restore_backup'])->toContain('pre-restauracao_');
+
+    // Central view now displays last restore card
+    $this->get(route('backup.settings'))
+        ->assertOk()
+        ->assertSee('Última Restauração Realizada')
+        ->assertSee($filename);
+
+    // Clean up
+    if (file_exists($statusFile)) {
+        @unlink($statusFile);
+    }
+});

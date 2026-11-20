@@ -6,6 +6,7 @@ use App\Support\BackupRunner;
 use App\Support\BackupSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class BackupController extends Controller
@@ -105,5 +106,69 @@ class BackupController extends Controller
         return redirect()
             ->route('backup.settings')
             ->with('success', 'Destino extra removido com sucesso.');
+    }
+
+    public function confirmRestore(string $file): View|RedirectResponse
+    {
+        if (! config('backup.restore_enabled', false)) {
+            abort(404);
+        }
+
+        if (! preg_match('/^[a-zA-Z0-9_\-]+\.sql$/', $file)) {
+            abort(404);
+        }
+
+        $backupDir = (string) config('backup.path', base_path('backups'));
+        $target = rtrim($backupDir, '/\\').DIRECTORY_SEPARATOR.$file;
+
+        if (! is_file($target)) {
+            return redirect()
+                ->route('backup.settings')
+                ->with('error', 'Arquivo de backup não encontrado no disco.');
+        }
+
+        $size = (int) filesize($target);
+        $sizeFormatted = BackupRunner::formatBytes($size);
+        $mtime = filemtime($target) ?: time();
+        $dateFormatted = Carbon::createFromTimestamp($mtime, config('app.timezone'))->format('d/m/Y H:i');
+
+        return view('modules.backup.restore-confirm', [
+            'file' => $file,
+            'sizeFormatted' => $sizeFormatted,
+            'dateFormatted' => $dateFormatted,
+        ]);
+    }
+
+    public function restore(Request $request, string $file): RedirectResponse
+    {
+        if (! config('backup.restore_enabled', false)) {
+            abort(404);
+        }
+
+        if (! preg_match('/^[a-zA-Z0-9_\-]+\.sql$/', $file)) {
+            abort(404);
+        }
+
+        $request->validate([
+            'confirm_text' => ['required', 'string'],
+        ]);
+
+        if (trim($request->input('confirm_text')) !== 'RESTAURAR') {
+            return back()->withErrors([
+                'confirm_text' => 'Você deve digitar exatamente a palavra RESTAURAR em maiúsculas para confirmar.',
+            ]);
+        }
+
+        $result = BackupRunner::restore($file);
+
+        if (! $result['success']) {
+            return redirect()
+                ->route('backup.settings')
+                ->with('error', $result['message']);
+        }
+
+        return redirect()
+            ->route('backup.settings')
+            ->with('success', $result['message']);
     }
 }

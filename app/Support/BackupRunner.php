@@ -4,6 +4,7 @@ namespace App\Support;
 
 use Illuminate\Process\Exceptions\ProcessTimedOutException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Process;
 use Throwable;
 
@@ -280,6 +281,201 @@ class BackupRunner
         $bytes /= pow(1024, $pow);
 
         return round($bytes, $precision).' '.$units[$pow];
+    }
+
+    /**
+     * @return array{
+     *     success: bool,
+     *     message: string,
+     *     pre_restore_backup: ?string,
+     *     migrate_output: ?string
+     * }
+     */
+    public static function restore(string $filename): array
+    {
+        $tz = (string) config('app.timezone', 'America/Sao_Paulo');
+        $nowFormatted = Carbon::now($tz)->format('d/m/Y H:i');
+
+        if (! preg_match('/^[a-zA-Z0-9_\-]+\.sql$/', $filename)) {
+            $msg = 'Nome de arquivo de backup inválido.';
+            self::saveRestoreStatus([
+                'status' => 'error',
+                'restored_at' => $nowFormatted,
+                'filename' => $filename,
+                'pre_restore_backup' => null,
+                'migrate_output' => null,
+                'message' => $msg,
+            ]);
+
+            return ['success' => false, 'message' => $msg, 'pre_restore_backup' => null, 'migrate_output' => null];
+        }
+
+        $backupDir = (string) config('backup.path', base_path('backups'));
+        $targetFile = rtrim($backupDir, '/\\').DIRECTORY_SEPARATOR.$filename;
+
+        if (! is_file($targetFile)) {
+            $msg = 'Arquivo de backup selecionado não foi encontrado no disco.';
+            self::saveRestoreStatus([
+                'status' => 'error',
+                'restored_at' => $nowFormatted,
+                'filename' => $filename,
+                'pre_restore_backup' => null,
+                'migrate_output' => null,
+                'message' => $msg,
+            ]);
+
+            return ['success' => false, 'message' => $msg, 'pre_restore_backup' => null, 'migrate_output' => null];
+        }
+
+        if (! self::validate($targetFile)) {
+            $msg = 'O arquivo selecionado não passou na validação de integridade e não pode ser restaurado.';
+            self::saveRestoreStatus([
+                'status' => 'error',
+                'restored_at' => $nowFormatted,
+                'filename' => $filename,
+                'pre_restore_backup' => null,
+                'migrate_output' => null,
+                'message' => $msg,
+            ]);
+
+            return ['success' => false, 'message' => $msg, 'pre_restore_backup' => null, 'migrate_output' => null];
+        }
+
+        // 1. Pre-restore security backup
+        $secBackup = self::run(prefix: 'pre-restauracao');
+        if (! $secBackup['success']) {
+            $msg = 'Abortado: Não foi possível criar o backup de segurança pré-restauração ('.$secBackup['message'].').';
+            self::saveRestoreStatus([
+                'status' => 'error',
+                'restored_at' => $nowFormatted,
+                'filename' => $filename,
+                'pre_restore_backup' => null,
+                'migrate_output' => null,
+                'message' => $msg,
+            ]);
+
+            return ['success' => false, 'message' => $msg, 'pre_restore_backup' => null, 'migrate_output' => null];
+        }
+
+        $secBackupFilename = $secBackup['filename'];
+
+        // 2. Execute restore via mysql client
+        $connection = (string) config('database.default', 'mysql');
+        $db = (string) config("database.connections.{$connection}.database");
+        $user = (string) config("database.connections.{$connection}.username");
+        $pwd = (string) config("database.connections.{$connection}.password");
+        $host = (string) config("database.connections.{$connection}.host", '127.0.0.1');
+        $port = (string) config("database.connections.{$connection}.port", '3306');
+
+        $mysql = (string) config('backup.mysql_path', 'C:\\tools\\mysql\\current\\bin\\mysql.exe');
+        $timeout = (int) config('backup.timeout', 300);
+
+        try {
+            $content = (string) file_get_contents($targetFile);
+
+            $result = Process::timeout($timeout)
+                ->env(['MYSQL_PWD' => $pwd])
+                ->input($content)
+                ->run([
+                    $mysql,
+                    '-h', $host,
+                    '-P', $port,
+                    '-u', $user,
+                    $db,
+                ]);
+
+            if (! $result->successful()) {
+                $errorMsg = trim($result->errorOutput() ?: $result->output());
+                $sanitized = self::sanitizeError($errorMsg);
+                $msg = "Falha durante a importação do banco: {$sanitized}";
+
+                self::saveRestoreStatus([
+                    'status' => 'error',
+                    'restored_at' => $nowFormatted,
+                    'filename' => $filename,
+                    'pre_restore_backup' => $secBackupFilename,
+                    'migrate_output' => null,
+                    'message' => $msg,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => $msg,
+                    'pre_restore_backup' => $secBackupFilename,
+                    'migrate_output' => null,
+                ];
+            }
+
+            // 3. Run pending migrations if any
+            Artisan::call('migrate', ['--force' => true]);
+            $migrateOutput = trim(Artisan::output());
+
+            $msg = "Banco de dados restaurado com sucesso a partir de {$filename}.";
+            self::saveRestoreStatus([
+                'status' => 'success',
+                'restored_at' => $nowFormatted,
+                'filename' => $filename,
+                'pre_restore_backup' => $secBackupFilename,
+                'migrate_output' => $migrateOutput,
+                'message' => $msg,
+            ]);
+
+            return [
+                'success' => true,
+                'message' => $msg,
+                'pre_restore_backup' => $secBackupFilename,
+                'migrate_output' => $migrateOutput,
+            ];
+        } catch (ProcessTimedOutException) {
+            $msg = "Tempo limite esgotado ({$timeout}s) durante a restauração do banco.";
+            self::saveRestoreStatus([
+                'status' => 'error',
+                'restored_at' => $nowFormatted,
+                'filename' => $filename,
+                'pre_restore_backup' => $secBackupFilename,
+                'migrate_output' => null,
+                'message' => $msg,
+            ]);
+
+            return ['success' => false, 'message' => $msg, 'pre_restore_backup' => $secBackupFilename, 'migrate_output' => null];
+        } catch (Throwable $e) {
+            $msg = 'Erro inesperado durante a restauração: '.self::sanitizeError($e->getMessage());
+            self::saveRestoreStatus([
+                'status' => 'error',
+                'restored_at' => $nowFormatted,
+                'filename' => $filename,
+                'pre_restore_backup' => $secBackupFilename,
+                'migrate_output' => null,
+                'message' => $msg,
+            ]);
+
+            return ['success' => false, 'message' => $msg, 'pre_restore_backup' => $secBackupFilename, 'migrate_output' => null];
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public static function saveRestoreStatus(array $data): bool
+    {
+        $statusPath = storage_path('app/backup-restore-status.json');
+        $dir = dirname($statusPath);
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        $tmpFile = $statusPath.'.tmp.'.uniqid();
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        if ($json === false) {
+            return false;
+        }
+
+        if (file_put_contents($tmpFile, $json) === false) {
+            return false;
+        }
+
+        return @rename($tmpFile, $statusPath);
     }
 
     protected static function sanitizeError(string $error): string
