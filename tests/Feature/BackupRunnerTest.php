@@ -175,3 +175,21 @@ it('handles manual backup trigger from web interface', function () {
 
     expect(BackupRunner::list())->toHaveCount(1);
 });
+
+it('provides operational scripts for scheduling and removing automatic backups', function () {
+    expect(file_exists(base_path('agendar-backup.bat')))->toBeTrue();
+    expect(file_exists(base_path('remover-agendamento.bat')))->toBeTrue();
+    expect(file_exists(base_path('scripts/agendar-backup.ps1')))->toBeTrue();
+    expect(file_exists(base_path('scripts/remover-agendamento.ps1')))->toBeTrue();
+
+    $agendarBat = file_get_contents(base_path('agendar-backup.bat'));
+    expect($agendarBat)->toContain('scripts\agendar-backup.ps1');
+
+    $removerBat = file_get_contents(base_path('remover-agendamento.bat'));
+    expect($removerBat)->toContain('scripts\remover-agendamento.ps1');
+
+    $agendarPs1 = file_get_contents(base_path('scripts/agendar-backup.ps1'));
+    expect($agendarPs1)->toContain('Register-ScheduledTask');
+    expect($agendarPs1)->toContain('-TaskName $TaskName');
+    expect($agendarPs1)->toContain("-TaskPath '\\'");
+});
