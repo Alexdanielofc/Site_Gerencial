@@ -4,21 +4,26 @@ Sistema local de gestão empresarial para operação diária, sem necessidade de
 
 ## Módulos do Sistema
 
-1. **Dashboard (`/`)**: Painel central integrado com seletor de período dinâmico, visão consolidada de vendas, notas fiscais, contas a pagar e bloco de atenção com contas vencidas e próximos vencimentos.
+1. **Dashboard (`/`)**:
+   - Painel central integrado com seletor de período dinâmico (`<x-period-pills>`).
+   - Faixa discreta de monitoramento da integridade do último backup (`App\Support\BackupStatus`).
+   - Visão consolidada de vendas, notas fiscais, contas a pagar e bloco de atenção com contas vencidas e próximos vencimentos.
 2. **Vendas e Metas (`/modulos/vendas`)**:
-   - Registro de venda do dia com prevenção de duplicação.
+   - Registro de venda do dia com prevenção de duplicação e proteção contra duplo clique (`SubmissionGuard`).
    - Comparativo com meta acumulada e expectativa diária.
-   - Gestão de expectativas do mês em lote (`/modulos/vendas/expectativas`).
+   - Gestão de expectativas do mês em lote com validação transacional tudo-ou-nada (`/modulos/vendas/expectativas`).
    - Visão avançada mensal com histórico diário (`/modulos/vendas/avancado`).
 3. **Notas Fiscais (`/modulos/notas-fiscais`)**:
    - Cadastro ágil de notas emitidas com data, número, cliente, CNPJ e valor.
-   - Listagem e edição das notas emitidas no dia.
-   - Consulta analítica avançada com busca e ticket médio (`/modulos/notas-fiscais/avancado`).
+   - Listagem e edição das notas emitidas no dia, preservando o contexto de busca e período ao editar.
+   - Cancelamento e reativação de notas (`canceled_at` / `cancel_reason`): notas canceladas permanecem no histórico com badge `Cancelada` e valor riscado, mas nunca entram em totais, contagens, ticket médio ou dashboard.
+   - Consulta analítica avançada com filtro de situação (`todas`, `ativas`, `canceladas`), busca textual e ticket médio (`/modulos/notas-fiscais/avancado`).
 4. **Contas a Pagar (`/modulos/contas-a-pagar`)**:
    - Cadastro e acompanhamento de compromissos financeiros.
-   - Seção "Em atenção" com contas vencidas e a vencer nos próximos 7 dias.
+   - Seção "Em atenção" com contas ativas vencidas e a vencer nos próximos 7 dias.
    - Quitação rápida com 1 clique ("Marcar como paga").
-   - Consulta avançada com filtros por situação (todas, pagas, pendentes, vencidas) e busca (`/modulos/contas-a-pagar/avancado`).
+   - Cancelamento e reativação de contas em aberto (contas pagas devem ser reabertas limpando `paid_at` antes de cancelar; contas canceladas não podem ser pagas nem editadas).
+   - Consulta avançada com filtros por situação (`todas`, `pendentes`, `vencidas`, `pagas`, `canceladas`) e busca (`/modulos/contas-a-pagar/avancado`).
 
 ---
 
@@ -29,7 +34,12 @@ Basta dar dois cliques no arquivo:
 ```cmd
 iniciar.bat
 ```
-Ele verifica o status do serviço MySQL, abre o navegador padrão em `http://127.0.0.1:8000` e inicia o servidor local.
+O script:
+1. Confirma que `.env` e `vendor` existem.
+2. Verifica se o serviço MySQL está em execução (`Running`) via PowerShell e tenta iniciá-lo caso esteja parado.
+3. Avisa caso `public/build/manifest.json` não exista ou caso `APP_ENV=local` / `APP_DEBUG=true`.
+4. Inicia `php artisan serve --host=127.0.0.1 --port=8000` em janela própria.
+5. Aguarda a porta `8000` responder (até 20 segundos) e **só então** abre o navegador padrão em `http://127.0.0.1:8000`.
 
 ### Método 2: Execução Manual por Linha de Comando
 Instale as dependências caso ainda não o tenha feito:
@@ -47,27 +57,89 @@ Acesse `http://127.0.0.1:8000` no seu navegador.
 
 ---
 
-## Backup e Restauração do Banco de Dados
+## Backup, Agendamento Automático e Restauração
 
 > [!IMPORTANT]
 > Copiar apenas os arquivos da aplicação **NÃO** preserva os dados cadastrados. Os dados residem no banco de dados MySQL `site_gerencial` e exigem dump para backup efetivo.
+> **Recomendação importante**: Copie periodicamente a pasta `backups` para um **pendrive** ou **armazenamento em nuvem**. Manter o backup apenas no mesmo computador não protege contra defeito físico no disco ou no equipamento.
 
-### Gerar Backup
+### 1. Gerar Backup Manual
 Dê dois cliques no script:
 ```cmd
 backup.bat
 ```
-O script gera um arquivo SQL em `backups/site_gerencial_AAAA-MM-DD_HHMM.sql` utilizando credenciais salvas de forma segura fora do repositório (`%USERPROFILE%\.site_gerencial_mysql.cnf`).
+- Na primeira execução, caso o arquivo de credenciais `%USERPROFILE%\.site_gerencial_mysql.cnf` não exista, o script cria um modelo com `user=site_gerencial` e `password=COLOQUE_A_SENHA_AQUI` fora do projeto e orienta o preenchimento da senha real.
+- O dump é gravado em `backups\site_gerencial_AAAA-MM-DD_HHMM.sql`.
+- O script valida que o arquivo gerado possui tamanho maior que 0 bytes e contém a assinatura final `Dump completed`. Caso ocorra qualquer falha, o arquivo parcial é removido automaticamente.
+- A rotação automática mantém os **30 backups mais recentes** na pasta `backups\`.
 
-### Restaurar Backup
-Para restaurar um backup existente em caso de necessidade:
-```cmd
-mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" site_gerencial < backups\site_gerencial_AAAA-MM-DD_HHMM.sql
-```
+### 2. Agendar Backup Automático Diário (Windows)
+Para agendar o backup diário automático às **20:00** (com `StartWhenAvailable`, executando ao ligar o computador caso tenha perdido o horário):
+1. Clique com o botão direito em `agendar-backup.bat` e selecione **Executar como administrador**.
+2. Ele criará a tarefa `SiteGerencial-Backup` no Agendador de Tarefas do Windows chamando `backup.bat auto` (que registra o histórico em `backups\backup.log`).
+3. Para remover o agendamento a qualquer momento, execute `remover-agendamento.bat` como administrador.
+
+### 3. Como Verificar o Último Backup
+- **No Dashboard (`/`)**: Uma faixa discreta exibe automaticamente o status do backup mais recente encontrado na pasta configurada (`config/backup.php` / `BACKUP_PATH`):
+  - **Azul (`info`)**: backup feito hoje ou há até 2 dias.
+  - **Amarelo (`warning`)**: último backup entre 3 e 7 dias.
+  - **Vermelho (`danger`)**: último backup há mais de 7 dias ou nenhum arquivo encontrado.
+- **Na pasta `backups\`**: Confira o arquivo `site_gerencial_AAAA-MM-DD_HHMM.sql` mais recente e o registro em `backups\backup.log`.
+
+### 4. Passo a Passo da Restauração e Teste Mensal
+
+> [!WARNING]
+> Recomenda-se **testar a restauração uma vez por mês em um banco separado de teste** (ex.: `site_gerencial_restore_test`) para ter certeza de que os arquivos `.sql` estão íntegros antes de precisar deles em uma emergência.
+
+1. **Testar o arquivo de backup em um banco de teste (recomendado mensalmente)**:
+   ```cmd
+   mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" -e "CREATE DATABASE IF NOT EXISTS site_gerencial_restore_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+   mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" site_gerencial_restore_test < backups\site_gerencial_AAAA-MM-DD_HHMM.sql
+   ```
+   Verifique se as tabelas `daily_sales`, `sales_expectations`, `invoices` e `payables` foram carregadas normalmente e depois remova o banco temporário de teste.
+
+2. **Restaurar em caso de necessidade real**:
+   ```cmd
+   mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" site_gerencial < backups\site_gerencial_AAAA-MM-DD_HHMM.sql
+   ```
+
+---
+
+## Modo Demonstração (`_demo`)
+
+O sistema possui um modo de demonstração completamente isolado para apresentar o produto com dados fictícios plausíveis sem nunca tocar no banco real `site_gerencial`.
+
+### Regras de Segurança do Modo Demonstração
+- O comando `php artisan demo:seed` **só executa se o nome do banco conectado terminar obrigatoriamente em `_demo`** (ex.: `site_gerencial_demo`).
+- Em qualquer outro banco (incluindo `site_gerencial` e `site_gerencial_test`), o comando recusa a operação imediatamente com código de erro diferente de zero. Não existe opção `--force` que contorne essa trava.
+
+### Passo a Passo para Configurar e Iniciar a Demonstração
+1. Crie o banco `site_gerencial_demo` no MySQL e conceda permissão ao mesmo usuário da aplicação:
+   ```sql
+   CREATE DATABASE IF NOT EXISTS site_gerencial_demo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   GRANT ALL PRIVILEGES ON site_gerencial_demo.* TO 'site_gerencial'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+2. Copie o modelo `.env.demo.example` para `.env.demo` (o arquivo `.env.demo` está no `.gitignore` e nunca é versionado) e preencha `APP_KEY` e `DB_PASSWORD`:
+   ```powershell
+   Copy-Item .env.demo.example .env.demo
+   php artisan key:generate --env=demo
+   ```
+3. Execute as migrations e popule os dados fictícios determinísticos no ambiente `demo`:
+   ```powershell
+   php artisan migrate --env=demo
+   php artisan demo:seed --env=demo --yes
+   ```
+4. Inicie o servidor de demonstração na porta `8001` dando dois cliques em:
+   ```cmd
+   iniciar-demo.bat
+   ```
+   O navegador abrirá em `http://127.0.0.1:8001` exibindo 3 meses anteriores + mês atual (com o dia de hoje em aberto para demonstrar o lançamento de venda diária, expectativas preenchidas, notas fiscais e contas a pagar pagas, pendentes, vencidas e canceladas).
 
 ---
 
 ## Execução em Produção Local
+
 Para rodar em modo produção local de alto desempenho:
 1. Ajuste no `.env`:
    ```env
@@ -90,7 +162,7 @@ Para rodar em modo produção local de alto desempenho:
 
 ## Testes Automatizados
 
-A aplicação conta com suíte completa de testes de funcionalidades e regras de negócio via Pest:
+A aplicação conta com suíte completa de testes de funcionalidades e regras de negócio via Pest (utilizando o banco isolado `site_gerencial_test`):
 
 ```powershell
 php artisan test --compact
@@ -105,16 +177,16 @@ O sistema foi desenvolvido como produto white label. Para personalizar para a em
 1. **Subtítulo e Iniciais do Cabeçalho**: `resources/views/components/header.blade.php` (marcador `Empresa` e monograma `SG`).
 2. **Sufixo do Título das Páginas**: `resources/views/components/layout.blade.php` (`<title>{{ $title }} | Site Gerencial</title>`).
 3. **Crédito do Rodapé**: `resources/views/components/footer.blade.php`.
-4. **Paleta de Cores e Tokens Visuais**: `resources/css/app.css` (variáveis CSS dentro de `:root` e `@theme inline`).
+4. **Paleta de Cores e Tokens Visuais**: `resources/css/app.css` (variáveis CSS dentro de `:root`, `@theme inline` e `html[data-theme='dark']`).
 5. **Nome da Aplicação**: Variável `APP_NAME` no arquivo `.env`.
 
 ---
 
-## Tokens Semânticos e Tema Escuro
+## Tokens Semânticos, Tema Escuro e Contraste WCAG AA
 
-O sistema utiliza um conjunto de **tokens semânticos de cor** definidos em `resources/css/app.css`. Esses tokens se sobrepõem automaticamente no modo escuro sem necessidade de classes `dark:` nas views.
+O sistema utiliza **tokens semânticos de cor** definidos em `resources/css/app.css`. Esses tokens se sobrepõem automaticamente sob `html[data-theme='dark']` sem espalhar classes `dark:` nas views. O token `--branco` (`#ffffff`) nunca muda entre os temas para garantir contraste elevado sobre botões primários e pílulas selecionadas (`bg-blu6`).
 
-### Tokens Semânticos
+### Tabela de Tokens Semânticos
 
 | Token CSS | Tailwind | Modo Claro | Modo Escuro | Uso |
 |---|---|---|---|---|
@@ -122,33 +194,25 @@ O sistema utiliza um conjunto de **tokens semânticos de cor** definidos em `res
 | `--surface-2` | `bg-surface-2` | `#f9fafb` | `#16213a` | Cabeçalhos de tabela, fundos suaves |
 | `--line` | `border-line` | `#d1d5db` | `#26344f` | Bordas de cards, inputs, divisores |
 | `--ink` | `text-ink` | `#1f2937` | `#e6edf7` | Texto principal |
-| `--ink-soft` | `text-ink-soft` | `#4b5563` | `#9fb0c8` | Texto secundário/dicas |
-| `--accent` | `text-accent` | `#2563eb` | `#93c5fd` | Links, textos de destaque, ícones de navegação |
-| `--chrome` | `bg-chrome` | `#1f2937` | `#070d19` | Header e footer |
+| `--ink-soft` | `text-ink-soft` | `#4b5563` | `#9fb0c8` | Texto secundário e placeholders |
+| `--accent` | `text-accent` | `#2563eb` | `#93c5fd` | Links, textos de destaque, anel de foco |
+| `--chrome` | `bg-chrome` | `#1f2937` | `#070d19` | Fundo do header e do footer |
+| `--chrome-ink` | `text-chrome-ink` | `#d1d5db` | `#d1d5db` | Texto e links do header e do footer |
+| `--chrome-line` | `border-chrome-line` | `#4b5563` | `#26344f` | Borda divisória do header e do footer |
 
-### Modo Escuro
+### Razões de Contraste WCAG AA Aferidas
 
-O tema escuro é controlado pelo atributo `data-theme="dark"` na tag `<html>`. Ele é aplicado automaticamente de acordo com:
-
-1. **Preferência salva pelo usuário** (`localStorage.getItem('theme')`).
-2. **Preferência do sistema** (`prefers-color-scheme: dark`), usada como fallback quando não há preferência salva.
-
-Um script inline no `<head>` do layout (antes do CSS) aplica o tema imediatamente, sem piscar.
-
-#### Alternância pelo usuário
-
-O botão **sol/lua** exibido no canto do header alterna entre os temas e persiste a escolha em `localStorage`.
-
-#### Como personalizar tokens no modo escuro
-
-Para ajustar uma cor no modo escuro, edite o bloco `html[data-theme='dark']` em `resources/css/app.css`:
-
-```css
-html[data-theme='dark'] {
-    --surface: #111a2e;   /* fundo de card no escuro */
-    --ink: #e6edf7;       /* texto principal no escuro */
-    /* ... */
-}
-```
-
-Após qualquer alteração de CSS, rode `npm run build` para recompilar os assets.
+| Par avaliado | Modo Claro | Modo Escuro | Mínimo WCAG AA |
+|---|---|---|---|
+| Header / Footer (`chrome-ink` sobre `chrome`) | **9,96:1** | **13,19:1** | 4,5:1 |
+| Navegação ativa / hover (`blu3` sobre `chrome`) | **8,14:1** | **10,78:1** | 4,5:1 |
+| Botão primário, pílula ativa e logo SG (`branco` sobre `blu6`) | **5,17:1** | **5,17:1** | 4,5:1 |
+| Texto principal em card/campo/tabela (`ink` sobre `surface`) | **14,68:1** | **14,72:1** | 4,5:1 |
+| Texto secundário e placeholder (`ink-soft` sobre `surface`) | **7,56:1** | **7,86:1** | 4,5:1 |
+| Cabeçalho de tabela (`ink-soft` sobre `surface-2`) | **7,23:1** | **7,25:1** | 4,5:1 |
+| Links e foco (`accent` sobre `surface`) | **5,17:1** | **9,62:1** | 4,5:1 |
+| Alerta e badge `success` (`grn7` sobre `grn1`) | **4,79:1** | **10,96:1** | 4,5:1 |
+| Alerta e badge `danger` (`red7` sobre `red1`) | **5,91:1** | **9,15:1** | 4,5:1 |
+| Alerta e badge `warning` (`yel8` sobre `yel1`) | **6,84:1** | **12,59:1** | 4,5:1 |
+| Alerta `info` (`ink` sobre `blu1`) | **13,49:1** | **13,88:1** | 4,5:1 |
+| Mensagem de erro de campo (`red6` sobre `surface`) | **4,83:1** | **5,76:1** | 4,5:1 |

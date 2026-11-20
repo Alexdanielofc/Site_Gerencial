@@ -9,13 +9,16 @@ O módulo de **Contas a Pagar** é responsável pela gestão e acompanhamento da
 - `due_date`: data de vencimento (com índice, vencimento livre).
 - `paid_at`: data de liquidação/pagamento (com índice, nullable, não pode ser futura).
 - `notes`: observações adicionais (string até 500 caracteres, opcional).
+- `canceled_at`: data/hora de cancelamento (`TIMESTAMP`, nullable, com índice).
+- `cancel_reason`: motivo opcional do cancelamento (`VARCHAR(255)`, nullable).
 - `timestamps`: controle de data/hora de criação e alteração.
 
 ## Situação da Conta (Calculada em Tempo de Execução)
-A situação da conta nunca é gravada como coluna estática, sendo deduzida a partir de `paid_at` e `due_date`:
-1. **Paga**: `paid_at` preenchido (badge verde com ícone de confirmação).
-2. **Vencida**: `paid_at` nulo e `due_date` anterior ao dia atual (badge vermelho com ícone de alerta).
-3. **Pendente**: `paid_at` nulo e `due_date` igual ou posterior ao dia atual (badge âmbar). Contas que vencem hoje são consideradas pendentes.
+A situação da conta nunca é gravada como coluna estática, sendo deduzida a partir de `canceled_at`, `paid_at` e `due_date`:
+1. **Cancelada**: `canceled_at` preenchido (tem prioridade máxima sobre as demais; badge neutra com valor riscado; nunca entra em totais, indicadores, "Em atenção", vencidas ou próximos vencimentos).
+2. **Paga**: `canceled_at` nulo e `paid_at` preenchido (badge verde com ícone de confirmação). Contas pagas não podem ser canceladas sem antes reabri-las.
+3. **Vencida**: `canceled_at` e `paid_at` nulos e `due_date` anterior ao dia atual (badge vermelho com ícone de alerta).
+4. **Pendente**: `canceled_at` e `paid_at` nulos e `due_date` igual ou posterior ao dia atual (badge âmbar). Contas que vencem hoje são consideradas pendentes.
 
 ## Funcionalidades
 

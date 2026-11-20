@@ -4,10 +4,11 @@ O **Dashboard** é a visão central do Site Gerencial (`/`), fornecendo um panor
 
 ## Funcionalidades
 
-### 1. Seletor de Período Unificado
-- Localizado no topo da página.
-- Agrupa dinamicamente todos os anos e meses com registros em **qualquer um dos módulos** (vendas, expectativas, notas fiscais e contas a pagar), em conjunto com o mês corrente do servidor.
+### 1. Seletor de Período Unificado e Status do Backup
+- Localizado no topo da página (`<x-period-pills>` via `App\Support\PeriodPills`).
+- Agrupa dinamicamente todos os anos e meses com registros em **qualquer um dos módulos** (vendas, expectativas, notas fiscais e contas a pagar, incluindo períodos com registros cancelados), em conjunto com o mês corrente do servidor.
 - Os períodos são deduplicados e apresentados no padrão de pílulas acessíveis.
+- **Faixa de Status do Backup (`App\Support\BackupStatus`)**: exibe alerta discreto (`info` até 2 dias, `warning` de 3 a 7 dias, `danger` acima de 7 dias ou sem backup) com base no arquivo `site_gerencial_*.sql` mais recente em `config('backup.path')`.
 
 ### 2. Seção Vendas e Metas
 - **Mês Atual**:

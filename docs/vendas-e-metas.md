@@ -18,9 +18,10 @@ O módulo de **Vendas e Metas** é responsável pelo registro diário de vendas,
   - Botão de acesso para "AVANÇADO".
 
 ### 2. Expectativas do Mês (`/modulos/vendas/expectativas`)
-- Janela de seleção de 3 períodos: mês anterior, mês atual e mês seguinte.
+- Janela de seleção de 3 períodos: mês anterior, mês atual e mês seguinte (`UpdateSalesExpectationsRequest::allowedMonths()`).
 - Tabela com todos os dias do mês selecionado.
-- Preenchimento em lote das expectativas com gravação via `upsert`. Valores em branco são salvos como `0,00`.
+- Validação estrita em Form Request (`UpdateSalesExpectationsRequest`): chaves devem ser datas válidas (`!Y-m-d`) pertencentes ao mês exibido; valores numéricos de `0` a `9.999.999.999,99` com até 2 casas decimais.
+- Gravação atômica tudo-ou-nada via `upsert` dentro de `DB::transaction`. Valores em branco são salvos como `0,00`. Erros destacam o campo com borda `red6` e preservam o valor digitado via `old()`.
 - Campos já cadastrados são carregados automaticamente para consulta e atualização.
 
 ### 3. Área Avançada (`/modulos/vendas/avancado`)

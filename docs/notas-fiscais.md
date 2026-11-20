@@ -10,7 +10,14 @@ O módulo de **Notas Fiscais** permite a organização e o acompanhamento das no
 - `customer_cnpj`: CNPJ do cliente (string com 14 dígitos numéricos, opcional, exibido com máscara `00.000.000/0000-00`).
 - `amount`: valor monetário da nota (`DECIMAL(12,2)`, mínimo `0,01`).
 - `notes`: observações adicionais (string até 500 caracteres, opcional).
+- `canceled_at`: data/hora de cancelamento (`TIMESTAMP`, nullable, com índice).
+- `cancel_reason`: motivo opcional do cancelamento (`VARCHAR(255)`, nullable).
 - `timestamps`: controle de data/hora de criação e alteração.
+
+## Regras de Cancelamento e Reativação
+- Notas com `canceled_at` preenchido permanecem visíveis nas listagens (linha esmaecida, valor riscado e badge neutra `Cancelada`), mas **nunca** entram em somas, contagens, ticket médio ou indicadores do dashboard (`scopeActive`).
+- O número (`invoice_number`) de uma nota cancelada continua único e não pode ser reutilizado.
+- Notas canceladas não podem ser editadas até que sejam reativadas (`POST /modulos/notas-fiscais/{invoice}/reativar`).
 
 ## Funcionalidades
 
