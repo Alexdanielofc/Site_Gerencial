@@ -84,6 +84,7 @@ it('renders a badge with the correct style and icon for each status', function (
     ['paga', 'border-grn2 bg-grn1 text-grn7', 'Paga'],
     ['vencida', 'border-red2 bg-red1 text-red7', 'Vencida'],
     ['pendente', 'border-yel2 bg-yel1 text-yel8', 'Pendente'],
+    ['cancelada', 'border-line bg-surface-2 text-ink-soft', 'Cancelada'],
 ]);
 
 it('renders the theme toggle button with the correct aria attributes', function () {

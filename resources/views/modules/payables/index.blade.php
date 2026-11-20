@@ -179,6 +179,22 @@
                                                 >
                                                     <x-icons.pencil /> EDITAR
                                                 </a>
+
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route('payables.cancel', $payable->id) }}"
+                                                    data-confirm="Cancelar esta conta? Ela deixará de entrar nos totais."
+                                                    data-loading-text="Cancelando..."
+                                                >
+                                                    @csrf
+                                                    <input type="hidden" name="origem" value="index">
+                                                    <button
+                                                        type="submit"
+                                                        class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold uppercase tracking-wide text-ink-soft hover:text-red6"
+                                                    >
+                                                        <x-icons.ban /> Cancelar
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>

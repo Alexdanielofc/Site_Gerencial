@@ -387,3 +387,171 @@ it('redirects to advanced view of the created invoice month when created from cr
     ])->assertRedirect(route('invoices.advanced', ['ano' => 2026, 'mes' => 3]))
         ->assertSessionHas('success');
 });
+
+// ── Status cancelada em Notas Fiscais (Item 8) ──────────────────────────────
+
+it('excludes canceled invoices from totals, counts, average ticket and dashboard but keeps them in the list', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $active = Invoice::create([
+        'issue_date' => '2026-06-15',
+        'invoice_number' => 'NF-ATIVA',
+        'customer_name' => 'Cliente Ativo',
+        'amount' => '300.00',
+    ]);
+
+    $canceled = Invoice::create([
+        'issue_date' => '2026-06-15',
+        'invoice_number' => 'NF-CANCELADA',
+        'customer_name' => 'Cliente Cancelado',
+        'amount' => '700.00',
+        'canceled_at' => now(),
+        'cancel_reason' => 'Erro de digitação',
+    ]);
+
+    expect(Invoice::countBetween(Carbon::create(2026, 6, 1), Carbon::create(2026, 6, 30)))->toBe(1);
+    expect(Invoice::totalCentsBetween(Carbon::create(2026, 6, 1), Carbon::create(2026, 6, 30)))->toBe(30000);
+    expect(Invoice::countOn(Carbon::create(2026, 6, 15)))->toBe(1);
+    expect(Invoice::centsOn(Carbon::create(2026, 6, 15)))->toBe(30000);
+
+    // Index page shows only active in totals, but lists both with Cancelada badge and data-confirm
+    $this->get(route('invoices.index'))
+        ->assertOk()
+        ->assertSee('R$ 300,00')
+        ->assertDontSee('R$ 1.000,00')
+        ->assertSee('NF-ATIVA')
+        ->assertSee('NF-CANCELADA')
+        ->assertSee('Cancelada')
+        ->assertSee('data-confirm=', false);
+
+    // Advanced page average ticket is 300.00 (not 500.00)
+    $this->get(route('invoices.advanced', ['ano' => 2026, 'mes' => 6]))
+        ->assertOk()
+        ->assertSee('R$ 300,00')
+        ->assertSee('NF-CANCELADA')
+        ->assertSee('Erro de digitação');
+
+    // Dashboard shows only R$ 300,00
+    $this->get(route('site.index', ['ano' => 2026, 'mes' => 6]))
+        ->assertOk()
+        ->assertSee('R$ 300,00')
+        ->assertDontSee('R$ 1.000,00');
+});
+
+it('cancels and reactivates an invoice while preserving context', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $invoice = Invoice::create([
+        'issue_date' => '2026-04-10',
+        'invoice_number' => 'NF-401',
+        'customer_name' => 'Cliente Abril',
+        'amount' => '400.00',
+    ]);
+
+    $this->post(route('invoices.cancel', $invoice->id), [
+        'cancel_reason' => 'Cancelamento solicitado',
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+    ])->assertRedirect(route('invoices.advanced', ['ano' => 2026, 'mes' => 4]))
+        ->assertSessionHas('success');
+
+    $invoice->refresh();
+    expect($invoice->isCanceled())->toBeTrue();
+    expect($invoice->cancel_reason)->toBe('Cancelamento solicitado');
+    expect(Invoice::totalCentsBetween(Carbon::create(2026, 4, 1), Carbon::create(2026, 4, 30)))->toBe(0);
+
+    $this->post(route('invoices.reactivate', $invoice->id), [
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+    ])->assertRedirect(route('invoices.advanced', ['ano' => 2026, 'mes' => 4]))
+        ->assertSessionHas('success');
+
+    $invoice->refresh();
+    expect($invoice->isCanceled())->toBeFalse();
+    expect($invoice->cancel_reason)->toBeNull();
+    expect(Invoice::totalCentsBetween(Carbon::create(2026, 4, 1), Carbon::create(2026, 4, 30)))->toBe(40000);
+});
+
+it('blocks editing a canceled invoice and shows reactivate alert on edit screen', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $invoice = Invoice::create([
+        'issue_date' => '2026-06-10',
+        'invoice_number' => 'NF-BLOQ',
+        'customer_name' => 'Original',
+        'amount' => '150.00',
+        'canceled_at' => now(),
+    ]);
+
+    $this->get(route('invoices.edit', $invoice->id))
+        ->assertOk()
+        ->assertSee('Esta nota fiscal está cancelada e não pode ser editada.')
+        ->assertSee('Reativar nota fiscal');
+
+    $this->put(route('invoices.update', $invoice->id), [
+        'issue_date' => '2026-06-10',
+        'customer_name' => 'Tentativa Edição',
+        'amount' => '999,00',
+    ])->assertSessionHas('warning');
+
+    expect($invoice->fresh()->customer_name)->toBe('Original');
+});
+
+it('keeps invoice_number of a canceled invoice unique so it cannot be reused', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    Invoice::create([
+        'issue_date' => '2026-06-10',
+        'invoice_number' => 'NF-UNICA-99',
+        'customer_name' => 'Cliente 1',
+        'amount' => '100.00',
+        'canceled_at' => now(),
+    ]);
+
+    $this->post(route('invoices.store'), [
+        'issue_date' => '2026-06-15',
+        'invoice_number' => 'NF-UNICA-99',
+        'customer_name' => 'Cliente 2',
+        'amount' => '200,00',
+    ])->assertSessionHasErrors('invoice_number');
+});
+
+it('includes periods that only have canceled invoices in periodsWithRecords', function () {
+    Invoice::create([
+        'issue_date' => '2025-02-10',
+        'customer_name' => 'Cliente Fevereiro 2025',
+        'amount' => '100.00',
+        'canceled_at' => now(),
+    ]);
+
+    $periods = Invoice::periodsWithRecords();
+    expect($periods->all())->toContain(['year' => 2025, 'month' => 2]);
+});
+
+it('filters invoices by situacao in advanced view', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    Invoice::create([
+        'issue_date' => '2026-06-10',
+        'customer_name' => 'Nota Ativa Filtro',
+        'amount' => '100.00',
+    ]);
+    Invoice::create([
+        'issue_date' => '2026-06-11',
+        'customer_name' => 'Nota Cancelada Filtro',
+        'amount' => '200.00',
+        'canceled_at' => now(),
+    ]);
+
+    $this->get(route('invoices.advanced', ['ano' => 2026, 'mes' => 6, 'situacao' => 'ativas']))
+        ->assertOk()
+        ->assertSee('Nota Ativa Filtro')
+        ->assertDontSee('Nota Cancelada Filtro');
+
+    $this->get(route('invoices.advanced', ['ano' => 2026, 'mes' => 6, 'situacao' => 'canceladas']))
+        ->assertOk()
+        ->assertSee('Nota Cancelada Filtro')
+        ->assertDontSee('Nota Ativa Filtro');
+});

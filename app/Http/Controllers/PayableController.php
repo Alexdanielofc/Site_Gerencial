@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CancelPayableRequest;
 use App\Http\Requests\PeriodRequest;
 use App\Http\Requests\StorePayableRequest;
 use App\Http\Requests\UpdatePayableRequest;
@@ -23,29 +24,33 @@ class PayableController extends Controller
         $today = today();
         $in7Days = $today->copy()->addDays(7);
 
-        // List "Em atenção": unpaid overdue OR unpaid due within 7 days
+        // List "Em atenção": active unpaid overdue OR active unpaid due within 7 days
         $attentionPayables = Payable::query()
+            ->active()
             ->whereNull('paid_at')
             ->where('due_date', '<=', $in7Days->toDateString())
             ->orderBy('due_date')
             ->orderBy('id')
             ->get();
 
-        // Indicador: Total em aberto (todas as contas não pagas)
+        // Indicador: Total em aberto (todas as contas ativas não pagas)
         $totalOpenCents = (int) Payable::query()
+            ->active()
             ->whereNull('paid_at')
             ->sum(DB::raw('amount * 100'));
 
-        // Indicador: Vencidas (em aberto e vencimento < hoje)
+        // Indicador: Vencidas (ativas em aberto e vencimento < hoje)
         $overdueQuery = Payable::query()
+            ->active()
             ->whereNull('paid_at')
             ->where('due_date', '<', $today->toDateString());
 
         $overdueCount = $overdueQuery->count();
         $overdueTotalCents = (int) $overdueQuery->sum(DB::raw('amount * 100'));
 
-        // Indicador: A vencer em até 7 dias (em aberto e hoje <= due_date <= hoje+7)
+        // Indicador: A vencer em até 7 dias (ativas em aberto e hoje <= due_date <= hoje+7)
         $upcomingQuery = Payable::query()
+            ->active()
             ->whereNull('paid_at')
             ->whereBetween('due_date', [$today->toDateString(), $in7Days->toDateString()]);
 
@@ -110,25 +115,32 @@ class PayableController extends Controller
         );
 
         $statusFilter = (string) $request->input('situacao', 'todas');
+        if (! in_array($statusFilter, UpdatePayableRequest::ALLOWED_STATUSES, true)) {
+            $statusFilter = 'todas';
+        }
         $search = trim((string) $request->input('busca', ''));
 
-        // Period Totals in R$
+        // Period Totals in R$ (active only)
         $periodTotalCents = (int) Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->sum(DB::raw('amount * 100'));
 
         $periodPaidCents = (int) Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNotNull('paid_at')
             ->sum(DB::raw('amount * 100'));
 
         $periodPendingCents = (int) Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNull('paid_at')
             ->where('due_date', '>=', $today->toDateString())
             ->sum(DB::raw('amount * 100'));
 
         $periodOverdueCents = (int) Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNull('paid_at')
             ->where('due_date', '<', $today->toDateString())
@@ -143,9 +155,10 @@ class PayableController extends Controller
         }
 
         match ($statusFilter) {
-            'pagas' => $query->whereNotNull('paid_at'),
-            'vencidas' => $query->whereNull('paid_at')->where('due_date', '<', $today->toDateString()),
-            'pendentes' => $query->whereNull('paid_at')->where('due_date', '>=', $today->toDateString()),
+            'pagas' => $query->active()->whereNotNull('paid_at'),
+            'vencidas' => $query->active()->whereNull('paid_at')->where('due_date', '<', $today->toDateString()),
+            'pendentes' => $query->active()->whereNull('paid_at')->where('due_date', '>=', $today->toDateString()),
+            'canceladas' => $query->canceled(),
             default => null,
         };
 
@@ -200,14 +213,14 @@ class PayableController extends Controller
      */
     public function update(UpdatePayableRequest $request, Payable $payable): RedirectResponse
     {
-        $payable->update($request->validated());
-
-        if ($request->validatedOrigin() === 'index') {
-            return redirect()->route('payables.index')
-                ->with('success', 'Conta a pagar atualizada com sucesso.');
+        if ($payable->isCanceled()) {
+            return $this->redirectToContext($request)
+                ->with('warning', 'Conta cancelada não pode ser editada. Reative-a antes de editar.');
         }
 
-        return redirect()->route('payables.advanced', $request->validatedContextParams())
+        $payable->update($request->validated());
+
+        return $this->redirectToContext($request)
             ->with('success', 'Conta a pagar atualizada com sucesso.');
     }
 
@@ -216,6 +229,11 @@ class PayableController extends Controller
      */
     public function pay(Payable $payable): RedirectResponse
     {
+        if ($payable->isCanceled()) {
+            return redirect()->back()
+                ->with('warning', 'Conta cancelada não pode ser marcada como paga.');
+        }
+
         if ($payable->paid_at !== null) {
             return redirect()->back()
                 ->with('warning', 'Conta já paga em '.$payable->paid_at->format('d/m/Y').'.');
@@ -225,5 +243,59 @@ class PayableController extends Controller
 
         return redirect()->back()
             ->with('success', 'Conta marcada como paga com sucesso.');
+    }
+
+    /**
+     * POST /modulos/contas-a-pagar/{payable}/cancelar
+     */
+    public function cancel(CancelPayableRequest $request, Payable $payable): RedirectResponse
+    {
+        if ($payable->isCanceled()) {
+            return $this->redirectToContext($request)
+                ->with('warning', 'Esta conta já está cancelada.');
+        }
+
+        if ($payable->paid_at !== null) {
+            return $this->redirectToContext($request)
+                ->with('warning', 'Conta paga não pode ser cancelada. Reabra a conta limpando a data de pagamento antes de cancelar.');
+        }
+
+        $payable->update([
+            'canceled_at' => now(),
+            'cancel_reason' => $request->validated('cancel_reason'),
+        ]);
+
+        return $this->redirectToContext($request)
+            ->with('success', 'Conta a pagar cancelada com sucesso.');
+    }
+
+    /**
+     * POST /modulos/contas-a-pagar/{payable}/reativar
+     */
+    public function reactivate(Request $request, Payable $payable): RedirectResponse
+    {
+        if (! $payable->isCanceled()) {
+            return $this->redirectToContext($request)
+                ->with('warning', 'Esta conta já está ativa.');
+        }
+
+        $payable->update([
+            'canceled_at' => null,
+            'cancel_reason' => null,
+        ]);
+
+        return $this->redirectToContext($request)
+            ->with('success', 'Conta a pagar reativada com sucesso.');
+    }
+
+    private function redirectToContext(Request $request): RedirectResponse
+    {
+        $context = UpdatePayableRequest::sanitizeContext($request);
+
+        if ($context['origem'] === 'index') {
+            return redirect()->route('payables.index');
+        }
+
+        return redirect()->route('payables.advanced', UpdatePayableRequest::advancedRouteParams($request));
     }
 }

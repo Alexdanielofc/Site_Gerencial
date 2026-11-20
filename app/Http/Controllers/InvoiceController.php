@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CancelInvoiceRequest;
 use App\Http\Requests\PeriodRequest;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
@@ -30,11 +31,11 @@ class InvoiceController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        // Month indicators
+        // Month indicators (active only)
         $monthCount = Invoice::countBetween($monthStart, $monthEnd);
         $monthTotalCents = Invoice::totalCentsBetween($monthStart, $monthEnd);
-        $todayCount = $todayInvoices->count();
-        $todayTotalCents = (int) round($todayInvoices->sum('amount') * 100);
+        $todayCount = Invoice::countOn($today);
+        $todayTotalCents = Invoice::centsOn($today);
 
         return view('modules.invoices.index', compact(
             'today',
@@ -92,6 +93,10 @@ class InvoiceController extends Controller
             $today
         );
 
+        $statusFilter = (string) $request->input('situacao', 'todas');
+        if (! in_array($statusFilter, UpdateInvoiceRequest::ALLOWED_STATUSES, true)) {
+            $statusFilter = 'todas';
+        }
         $search = trim((string) $request->input('busca', ''));
 
         // Query invoices for the period
@@ -105,7 +110,13 @@ class InvoiceController extends Controller
             });
         }
 
-        // Indicators for the period (unfiltered by search term, as specified in rules)
+        match ($statusFilter) {
+            'ativas' => $query->active(),
+            'canceladas' => $query->canceled(),
+            default => null,
+        };
+
+        // Indicators for the period (unfiltered by search term, active only)
         $periodCount = Invoice::countBetween($monthStart, $monthEnd);
         $periodTotalCents = Invoice::totalCentsBetween($monthStart, $monthEnd);
         $averageTicket = $periodCount > 0 ? (int) round($periodTotalCents / $periodCount) : null;
@@ -120,6 +131,7 @@ class InvoiceController extends Controller
             'years',
             'months',
             'invoices',
+            'statusFilter',
             'search',
             'periodCount',
             'periodTotalCents',
@@ -158,14 +170,63 @@ class InvoiceController extends Controller
      */
     public function update(UpdateInvoiceRequest $request, Invoice $invoice): RedirectResponse
     {
-        $invoice->update($request->validated());
-
-        if ($request->validatedOrigin() === 'index') {
-            return redirect()->route('invoices.index')
-                ->with('success', 'Nota fiscal atualizada com sucesso.');
+        if ($invoice->isCanceled()) {
+            return $this->redirectToContext($request)
+                ->with('warning', 'Nota fiscal cancelada não pode ser editada. Reative-a antes de editar.');
         }
 
-        return redirect()->route('invoices.advanced', $request->validatedContextParams())
+        $invoice->update($request->validated());
+
+        return $this->redirectToContext($request)
             ->with('success', 'Nota fiscal atualizada com sucesso.');
+    }
+
+    /**
+     * POST /modulos/notas-fiscais/{invoice}/cancelar
+     */
+    public function cancel(CancelInvoiceRequest $request, Invoice $invoice): RedirectResponse
+    {
+        if ($invoice->isCanceled()) {
+            return $this->redirectToContext($request)
+                ->with('warning', 'Esta nota fiscal já está cancelada.');
+        }
+
+        $invoice->update([
+            'canceled_at' => now(),
+            'cancel_reason' => $request->validated('cancel_reason'),
+        ]);
+
+        return $this->redirectToContext($request)
+            ->with('success', 'Nota fiscal cancelada com sucesso.');
+    }
+
+    /**
+     * POST /modulos/notas-fiscais/{invoice}/reativar
+     */
+    public function reactivate(Request $request, Invoice $invoice): RedirectResponse
+    {
+        if (! $invoice->isCanceled()) {
+            return $this->redirectToContext($request)
+                ->with('warning', 'Esta nota fiscal já está ativa.');
+        }
+
+        $invoice->update([
+            'canceled_at' => null,
+            'cancel_reason' => null,
+        ]);
+
+        return $this->redirectToContext($request)
+            ->with('success', 'Nota fiscal reativada com sucesso.');
+    }
+
+    private function redirectToContext(Request $request): RedirectResponse
+    {
+        $context = UpdateInvoiceRequest::sanitizeContext($request);
+
+        if ($context['origem'] === 'index') {
+            return redirect()->route('invoices.index');
+        }
+
+        return redirect()->route('invoices.advanced', UpdateInvoiceRequest::advancedRouteParams($request));
     }
 }

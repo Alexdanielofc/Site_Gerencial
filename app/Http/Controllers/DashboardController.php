@@ -37,25 +37,30 @@ class DashboardController extends Controller
 
         // ── 3. Contas a pagar (Resumo do período) ───────────────────────────
         $payableTotalCents = (int) Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->sum(DB::raw('amount * 100'));
 
         $payablePaidCents = (int) Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNotNull('paid_at')
             ->sum(DB::raw('amount * 100'));
 
         $payablePendingCents = (int) Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->whereNull('paid_at')
             ->sum(DB::raw('amount * 100'));
 
         $payablePeriodCount = Payable::query()
+            ->active()
             ->whereBetween('due_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->count();
 
         // ── 3.1 Contas a pagar (Bloco Atenção: independente do período) ─────
         $overdueQuery = Payable::query()
+            ->active()
             ->whereNull('paid_at')
             ->where('due_date', '<', $today->toDateString());
 
@@ -64,6 +69,7 @@ class DashboardController extends Controller
 
         $in7Days = $today->copy()->addDays(7);
         $upcomingPayables = Payable::query()
+            ->active()
             ->whereNull('paid_at')
             ->whereBetween('due_date', [$today->toDateString(), $in7Days->toDateString()])
             ->orderBy('due_date')

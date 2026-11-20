@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -14,6 +15,8 @@ class Payable extends Model
         'due_date',
         'paid_at',
         'notes',
+        'canceled_at',
+        'cancel_reason',
     ];
 
     protected function casts(): array
@@ -22,14 +25,34 @@ class Payable extends Model
             'due_date' => 'date',
             'paid_at' => 'date',
             'amount' => 'decimal:2',
+            'canceled_at' => 'datetime',
         ];
     }
 
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('canceled_at');
+    }
+
+    public function scopeCanceled(Builder $query): Builder
+    {
+        return $query->whereNotNull('canceled_at');
+    }
+
+    public function isCanceled(): bool
+    {
+        return $this->canceled_at !== null;
+    }
+
     /**
-     * Computed status: 'paga', 'vencida', or 'pendente'.
+     * Computed status: 'cancelada' (highest priority), 'paga', 'vencida', or 'pendente'.
      */
     public function status(?Carbon $today = null): string
     {
+        if ($this->canceled_at !== null) {
+            return 'cancelada';
+        }
+
         if ($this->paid_at !== null) {
             return 'paga';
         }
@@ -45,7 +68,7 @@ class Payable extends Model
 
     public function isPaid(): bool
     {
-        return $this->paid_at !== null;
+        return $this->canceled_at === null && $this->paid_at !== null;
     }
 
     public function isOverdue(?Carbon $today = null): bool
@@ -83,6 +106,7 @@ class Payable extends Model
         $in7Days = $today->copy()->addDays(7);
 
         return static::query()
+            ->active()
             ->whereNull('paid_at')
             ->where('due_date', '<=', $in7Days->toDateString())
             ->orderBy('due_date')

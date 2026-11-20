@@ -173,28 +173,69 @@
                                     <th class="px-5 py-3">CNPJ</th>
                                     <th class="px-5 py-3 text-right">Valor</th>
                                     <th class="px-5 py-3">Observações</th>
-                                    <th class="px-5 py-3 text-right">Ação</th>
+                                    <th class="px-5 py-3 text-right">Ações</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-line">
                                 @foreach ($todayInvoices as $invoice)
-                                    <tr class="hover:bg-surface-2">
+                                    @php $isCanceled = $invoice->isCanceled(); @endphp
+                                    <tr class="hover:bg-surface-2 {{ $isCanceled ? 'opacity-60' : '' }}">
                                         <td class="px-5 py-3 font-medium text-ink">
-                                            {{ $invoice->invoice_number ?: '—' }}
+                                            <div class="flex items-center gap-2">
+                                                <span>{{ $invoice->invoice_number ?: '—' }}</span>
+                                                @if ($isCanceled)
+                                                    <x-badge status="cancelada" />
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-5 py-3 text-ink">{{ $invoice->customer_name }}</td>
                                         <td class="px-5 py-3 tabular-nums text-ink-soft">{{ $invoice->formatted_cnpj ?: '—' }}</td>
-                                        <td class="px-5 py-3 text-right font-semibold tabular-nums text-ink">
+                                        <td class="px-5 py-3 text-right font-semibold tabular-nums {{ $isCanceled ? 'line-through text-ink-soft' : 'text-ink' }}">
                                             {{ \App\Support\Money::format((int) round($invoice->amount * 100)) }}
                                         </td>
-                                        <td class="px-5 py-3 text-ink-soft">{{ $invoice->notes ?: '—' }}</td>
+                                        <td class="px-5 py-3 text-ink-soft">
+                                            {{ $invoice->notes ?: '—' }}
+                                            @if ($isCanceled && $invoice->cancel_reason)
+                                                <p class="text-xs text-ink-soft">Motivo: {{ $invoice->cancel_reason }}</p>
+                                            @endif
+                                        </td>
                                         <td class="px-5 py-3 text-right">
-                                            <a
-                                                href="{{ route('invoices.edit', ['invoice' => $invoice->id, 'origem' => 'index']) }}"
-                                                class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
-                                            >
-                                                <x-icons.pencil /> EDITAR
-                                            </a>
+                                            <div class="flex items-center justify-end gap-3">
+                                                @if ($isCanceled)
+                                                    <form method="POST" action="{{ route('invoices.reactivate', $invoice->id) }}" data-loading-text="Reativando...">
+                                                        @csrf
+                                                        <input type="hidden" name="origem" value="index">
+                                                        <button
+                                                            type="submit"
+                                                            class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold uppercase tracking-wide text-accent hover:text-blu5"
+                                                        >
+                                                            Reativar
+                                                        </button>
+                                                    </form>
+                                                @else
+                                                    <a
+                                                        href="{{ route('invoices.edit', ['invoice' => $invoice->id, 'origem' => 'index']) }}"
+                                                        class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
+                                                    >
+                                                        <x-icons.pencil /> EDITAR
+                                                    </a>
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ route('invoices.cancel', $invoice->id) }}"
+                                                        data-confirm="Cancelar esta nota? Ela deixará de entrar nos totais."
+                                                        data-loading-text="Cancelando..."
+                                                    >
+                                                        @csrf
+                                                        <input type="hidden" name="origem" value="index">
+                                                        <button
+                                                            type="submit"
+                                                            class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold uppercase tracking-wide text-ink-soft hover:text-red6"
+                                                        >
+                                                            <x-icons.ban /> Cancelar
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach

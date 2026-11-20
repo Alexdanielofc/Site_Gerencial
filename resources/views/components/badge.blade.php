@@ -20,6 +20,12 @@
             'color' => 'text-yel6',
             'label' => 'Pendente',
         ],
+        'cancelada' => [
+            'box'   => 'border-line bg-surface-2 text-ink-soft',
+            'icon'  => 'ban',
+            'color' => 'text-ink-soft',
+            'label' => 'Cancelada',
+        ],
     ];
 
     $config = $configs[$status] ?? $configs['pendente'];

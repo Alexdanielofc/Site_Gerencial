@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -17,6 +18,8 @@ class Invoice extends Model
         'customer_cnpj',
         'amount',
         'notes',
+        'canceled_at',
+        'cancel_reason',
     ];
 
     protected function casts(): array
@@ -24,7 +27,23 @@ class Invoice extends Model
         return [
             'issue_date' => 'date',
             'amount' => 'decimal:2',
+            'canceled_at' => 'datetime',
         ];
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('canceled_at');
+    }
+
+    public function scopeCanceled(Builder $query): Builder
+    {
+        return $query->whereNotNull('canceled_at');
+    }
+
+    public function isCanceled(): bool
+    {
+        return $this->canceled_at !== null;
     }
 
     /**
@@ -45,41 +64,45 @@ class Invoice extends Model
     }
 
     /**
-     * Total cents between two dates, inclusive.
+     * Total cents between two dates, inclusive (active invoices only).
      */
     public static function totalCentsBetween(Carbon $start, Carbon $end): int
     {
         return (int) static::query()
+            ->active()
             ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
             ->sum(DB::raw('amount * 100'));
     }
 
     /**
-     * Count of invoices between two dates, inclusive.
+     * Count of invoices between two dates, inclusive (active invoices only).
      */
     public static function countBetween(Carbon $start, Carbon $end): int
     {
         return static::query()
+            ->active()
             ->whereBetween('issue_date', [$start->toDateString(), $end->toDateString()])
             ->count();
     }
 
     /**
-     * Count of invoices issued on a specific date.
+     * Count of invoices issued on a specific date (active invoices only).
      */
     public static function countOn(Carbon $date): int
     {
         return static::query()
+            ->active()
             ->where('issue_date', $date->toDateString())
             ->count();
     }
 
     /**
-     * Sum of cents issued on a specific date.
+     * Sum of cents issued on a specific date (active invoices only).
      */
     public static function centsOn(Carbon $date): int
     {
         return (int) static::query()
+            ->active()
             ->where('issue_date', $date->toDateString())
             ->sum(DB::raw('amount * 100'));
     }

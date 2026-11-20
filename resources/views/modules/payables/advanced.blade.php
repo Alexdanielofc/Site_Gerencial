@@ -54,8 +54,8 @@
                 <input type="hidden" name="mes" value="{{ $monthStart->month }}">
 
                 {{-- Filtro de situação --}}
-                <div class="flex items-center gap-1.5 rounded-lg border border-line bg-surface p-1 text-xs">
-                    @foreach (['todas' => 'Todas', 'pendentes' => 'Pendentes', 'vencidas' => 'Vencidas', 'pagas' => 'Pagas'] as $key => $label)
+                <div class="flex flex-wrap items-center gap-1.5 rounded-lg border border-line bg-surface p-1 text-xs">
+                    @foreach (['todas' => 'Todas', 'pendentes' => 'Pendentes', 'vencidas' => 'Vencidas', 'pagas' => 'Pagas', 'canceladas' => 'Canceladas'] as $key => $label)
                         <button
                             type="submit"
                             name="situacao"
@@ -114,8 +114,11 @@
                         </thead>
                         <tbody class="divide-y divide-line">
                             @foreach ($payables as $payable)
-                                @php $status = $payable->status($today); @endphp
-                                <tr class="{{ $status === 'vencida' ? 'bg-red1/50 hover:bg-red1/70' : 'hover:bg-surface-2' }}">
+                                @php
+                                    $status = $payable->status($today);
+                                    $isCanceled = $payable->isCanceled();
+                                @endphp
+                                <tr class="{{ $status === 'vencida' ? 'bg-red1/50 hover:bg-red1/70' : 'hover:bg-surface-2' }} {{ $isCanceled ? 'opacity-60' : '' }}">
                                     <td class="px-5 py-3 font-medium tabular-nums {{ $status === 'vencida' ? 'text-red7 font-semibold' : 'text-ink' }}">
                                         {{ $payable->due_date->format('d/m/Y') }}
                                     </td>
@@ -124,8 +127,11 @@
                                         @if ($payable->notes)
                                             <p class="text-xs text-ink-soft">{{ $payable->notes }}</p>
                                         @endif
+                                        @if ($isCanceled && $payable->cancel_reason)
+                                            <p class="text-xs text-ink-soft">Motivo: {{ $payable->cancel_reason }}</p>
+                                        @endif
                                     </td>
-                                    <td class="px-5 py-3 text-right font-semibold tabular-nums text-ink">
+                                    <td class="px-5 py-3 text-right font-semibold tabular-nums {{ $isCanceled ? 'line-through text-ink-soft' : 'text-ink' }}">
                                         {{ \App\Support\Money::format((int) round($payable->amount * 100)) }}
                                     </td>
                                     <td class="px-5 py-3">
@@ -136,32 +142,73 @@
                                     </td>
                                     <td class="px-5 py-3 text-right">
                                         <div class="flex items-center justify-end gap-3">
-                                            @if (! $payable->isPaid())
-                                                <form method="POST" action="{{ route('payables.pay', $payable->id) }}">
+                                            @if ($isCanceled)
+                                                <form method="POST" action="{{ route('payables.reactivate', $payable->id) }}" data-loading-text="Reativando...">
                                                     @csrf
+                                                    <input type="hidden" name="origem" value="advanced">
+                                                    <input type="hidden" name="ano" value="{{ $monthStart->year }}">
+                                                    <input type="hidden" name="mes" value="{{ $monthStart->month }}">
+                                                    @if ($statusFilter !== 'todas') <input type="hidden" name="situacao" value="{{ $statusFilter }}"> @endif
+                                                    @if ($search !== '') <input type="hidden" name="busca" value="{{ $search }}"> @endif
+                                                    @if ($payables->currentPage() > 1) <input type="hidden" name="page" value="{{ $payables->currentPage() }}"> @endif
                                                     <button
                                                         type="submit"
-                                                        class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold uppercase tracking-wide text-grn7 hover:text-grn6"
+                                                        class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold uppercase tracking-wide text-accent hover:text-blu5"
                                                     >
-                                                        <x-icons.check /> Pagar
+                                                        Reativar
                                                     </button>
                                                 </form>
-                                            @endif
+                                            @else
+                                                @if (! $payable->isPaid())
+                                                    <form method="POST" action="{{ route('payables.pay', $payable->id) }}">
+                                                        @csrf
+                                                        <button
+                                                            type="submit"
+                                                            class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold uppercase tracking-wide text-grn7 hover:text-grn6"
+                                                        >
+                                                            <x-icons.check /> Pagar
+                                                        </button>
+                                                    </form>
+                                                @endif
 
-                                            <a
-                                                href="{{ route('payables.edit', array_filter([
-                                                    'payable' => $payable->id,
-                                                    'origem' => 'advanced',
-                                                    'ano' => $monthStart->year,
-                                                    'mes' => $monthStart->month,
-                                                    'situacao' => $statusFilter !== 'todas' ? $statusFilter : null,
-                                                    'busca' => $search !== '' ? $search : null,
-                                                    'page' => $payables->currentPage() > 1 ? $payables->currentPage() : null,
-                                                ])) }}"
-                                                class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
-                                            >
-                                                <x-icons.pencil /> EDITAR
-                                            </a>
+                                                <a
+                                                    href="{{ route('payables.edit', array_filter([
+                                                        'payable' => $payable->id,
+                                                        'origem' => 'advanced',
+                                                        'ano' => $monthStart->year,
+                                                        'mes' => $monthStart->month,
+                                                        'situacao' => $statusFilter !== 'todas' ? $statusFilter : null,
+                                                        'busca' => $search !== '' ? $search : null,
+                                                        'page' => $payables->currentPage() > 1 ? $payables->currentPage() : null,
+                                                    ])) }}"
+                                                    class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
+                                                >
+                                                    <x-icons.pencil /> EDITAR
+                                                </a>
+
+                                                @if (! $payable->isPaid())
+                                                    <form
+                                                        method="POST"
+                                                        action="{{ route('payables.cancel', $payable->id) }}"
+                                                        data-confirm="Cancelar esta conta? Ela deixará de entrar nos totais."
+                                                        data-loading-text="Cancelando..."
+                                                    >
+                                                        @csrf
+                                                        <input type="hidden" name="origem" value="advanced">
+                                                        <input type="hidden" name="ano" value="{{ $monthStart->year }}">
+                                                        <input type="hidden" name="mes" value="{{ $monthStart->month }}">
+                                                        @if ($statusFilter !== 'todas') <input type="hidden" name="situacao" value="{{ $statusFilter }}"> @endif
+                                                        @if ($search !== '') <input type="hidden" name="busca" value="{{ $search }}"> @endif
+                                                        @if ($payables->currentPage() > 1) <input type="hidden" name="page" value="{{ $payables->currentPage() }}"> @endif
+                                                        <button
+                                                            type="submit"
+                                                            class="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold uppercase tracking-wide text-ink-soft hover:text-red6"
+                                                        >
+                                                            <x-icons.ban /> Cancelar
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

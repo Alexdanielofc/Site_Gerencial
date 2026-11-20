@@ -40,6 +40,10 @@ Route::prefix('modulos')->group(function (): void {
             ->whereNumber('invoice');
         Route::put('/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update')
             ->whereNumber('invoice');
+        Route::post('/{invoice}/cancelar', [InvoiceController::class, 'cancel'])->name('invoices.cancel')
+            ->whereNumber('invoice');
+        Route::post('/{invoice}/reativar', [InvoiceController::class, 'reactivate'])->name('invoices.reactivate')
+            ->whereNumber('invoice');
     });
 
     // ── Contas a pagar ─────────────────────────────────────────────────────
@@ -56,6 +60,10 @@ Route::prefix('modulos')->group(function (): void {
         Route::put('/{payable}', [PayableController::class, 'update'])->name('payables.update')
             ->whereNumber('payable');
         Route::post('/{payable}/pagar', [PayableController::class, 'pay'])->name('payables.pay')
+            ->whereNumber('payable');
+        Route::post('/{payable}/cancelar', [PayableController::class, 'cancel'])->name('payables.cancel')
+            ->whereNumber('payable');
+        Route::post('/{payable}/reativar', [PayableController::class, 'reactivate'])->name('payables.reactivate')
             ->whereNumber('payable');
     });
 });

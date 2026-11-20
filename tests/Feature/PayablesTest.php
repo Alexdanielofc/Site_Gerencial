@@ -432,3 +432,173 @@ it('redirects to advanced view of the created payable month when created from cr
     ])->assertRedirect(route('payables.advanced', ['ano' => 2026, 'mes' => 8]))
         ->assertSessionHas('success');
 });
+
+// ── Status cancelada em Contas a Pagar (Item 8) ─────────────────────────────
+
+it('gives cancelada priority over paga, vencida and pendente in Payable::status', function () {
+    $today = Carbon::create(2026, 6, 15);
+
+    $canceledOverdue = new Payable([
+        'due_date' => '2026-06-01',
+        'paid_at' => null,
+        'canceled_at' => now(),
+    ]);
+    expect($canceledOverdue->status($today))->toBe('cancelada');
+
+    $canceledPaid = new Payable([
+        'due_date' => '2026-06-01',
+        'paid_at' => '2026-06-01',
+        'canceled_at' => now(),
+    ]);
+    expect($canceledPaid->status($today))->toBe('cancelada');
+    expect($canceledPaid->isPaid())->toBeFalse();
+});
+
+it('excludes canceled payables from totals, attention list, overdue, upcoming and dashboard', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    Payable::create([
+        'description' => 'Conta Ativa Vencida',
+        'amount' => '200.00',
+        'due_date' => '2026-06-10',
+    ]);
+    Payable::create([
+        'description' => 'Conta Cancelada Vencida',
+        'amount' => '900.00',
+        'due_date' => '2026-06-10',
+        'canceled_at' => now(),
+        'cancel_reason' => 'Cobrança indevida',
+    ]);
+    Payable::create([
+        'description' => 'Conta Cancelada Próxima',
+        'amount' => '500.00',
+        'due_date' => '2026-06-18',
+        'canceled_at' => now(),
+    ]);
+
+    // Index attention list only has the active overdue payable
+    $this->get(route('payables.index'))
+        ->assertOk()
+        ->assertSee('Conta Ativa Vencida')
+        ->assertDontSee('Conta Cancelada Vencida')
+        ->assertDontSee('Conta Cancelada Próxima')
+        ->assertSee('R$ 200,00')
+        ->assertDontSee('R$ 1.100,00')
+        ->assertSee('data-confirm=', false);
+
+    // Advanced lists both, but period totals only count active (R$ 200,00)
+    $this->get(route('payables.advanced', ['ano' => 2026, 'mes' => 6]))
+        ->assertOk()
+        ->assertSee('Conta Ativa Vencida')
+        ->assertSee('Conta Cancelada Vencida')
+        ->assertSee('Cobrança indevida')
+        ->assertSee('Cancelada')
+        ->assertSee('R$ 200,00')
+        ->assertDontSee('R$ 1.600,00');
+
+    // Dashboard excludes canceled from period summary, overdue and upcoming
+    $this->get(route('site.index', ['ano' => 2026, 'mes' => 6]))
+        ->assertOk()
+        ->assertSee('1 conta vencida necessita pagamento.')
+        ->assertDontSee('Conta Cancelada Próxima');
+});
+
+it('cancels and reactivates an open payable while preserving context', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $payable = Payable::create([
+        'description' => 'Internet Abril',
+        'amount' => '150.00',
+        'due_date' => '2026-04-20',
+    ]);
+
+    $this->post(route('payables.cancel', $payable->id), [
+        'cancel_reason' => 'Contrato encerrado',
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+    ])->assertRedirect(route('payables.advanced', ['ano' => 2026, 'mes' => 4]))
+        ->assertSessionHas('success');
+
+    $payable->refresh();
+    expect($payable->isCanceled())->toBeTrue();
+    expect($payable->cancel_reason)->toBe('Contrato encerrado');
+
+    $this->post(route('payables.reactivate', $payable->id), [
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+    ])->assertRedirect(route('payables.advanced', ['ano' => 2026, 'mes' => 4]))
+        ->assertSessionHas('success');
+
+    $payable->refresh();
+    expect($payable->isCanceled())->toBeFalse();
+    expect($payable->cancel_reason)->toBeNull();
+});
+
+it('refuses to cancel a paid payable and refuses to pay a canceled payable', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $paid = Payable::create([
+        'description' => 'Conta Já Paga',
+        'amount' => '100.00',
+        'due_date' => '2026-06-10',
+        'paid_at' => '2026-06-10',
+    ]);
+
+    $this->post(route('payables.cancel', $paid->id), ['origem' => 'index'])
+        ->assertRedirect(route('payables.index'))
+        ->assertSessionHas('warning');
+
+    expect($paid->fresh()->isCanceled())->toBeFalse();
+
+    $canceled = Payable::create([
+        'description' => 'Conta Cancelada',
+        'amount' => '100.00',
+        'due_date' => '2026-06-10',
+        'canceled_at' => now(),
+    ]);
+
+    $this->from(route('payables.advanced'))
+        ->post(route('payables.pay', $canceled->id))
+        ->assertRedirect(route('payables.advanced'))
+        ->assertSessionHas('warning');
+
+    expect($canceled->fresh()->paid_at)->toBeNull();
+});
+
+it('blocks editing a canceled payable and shows reactivate alert on edit screen', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $payable = Payable::create([
+        'description' => 'Conta Bloqueada',
+        'amount' => '220.00',
+        'due_date' => '2026-06-20',
+        'canceled_at' => now(),
+    ]);
+
+    $this->get(route('payables.edit', $payable->id))
+        ->assertOk()
+        ->assertSee('Esta conta a pagar está cancelada e não pode ser editada.')
+        ->assertSee('Reativar conta');
+
+    $this->put(route('payables.update', $payable->id), [
+        'description' => 'Tentativa Alteração',
+        'amount' => '500,00',
+        'due_date' => '2026-06-20',
+    ])->assertSessionHas('warning');
+
+    expect($payable->fresh()->description)->toBe('Conta Bloqueada');
+});
+
+it('includes periods that only have canceled payables in periodsWithRecords', function () {
+    Payable::create([
+        'description' => 'Conta Janeiro 2025',
+        'amount' => '100.00',
+        'due_date' => '2025-01-15',
+        'canceled_at' => now(),
+    ]);
+
+    $periods = Payable::periodsWithRecords();
+    expect($periods->all())->toContain(['year' => 2025, 'month' => 1]);
+});
