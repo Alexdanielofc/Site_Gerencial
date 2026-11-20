@@ -57,51 +57,72 @@ Acesse `http://127.0.0.1:8000` no seu navegador.
 
 ---
 
-## Backup, Agendamento Automático e Restauração
+## Central de Backup, Agendamento e Restauração
 
 > [!IMPORTANT]
 > Copiar apenas os arquivos da aplicação **NÃO** preserva os dados cadastrados. Os dados residem no banco de dados MySQL `site_gerencial` e exigem dump para backup efetivo.
-> **Recomendação importante**: Copie periodicamente a pasta `backups` para um **pendrive** ou **armazenamento em nuvem**. Manter o backup apenas no mesmo computador não protege contra defeito físico no disco ou no equipamento.
+> **Recomendação importante**: Copie periodicamente a pasta `backups` para um **pendrive** ou configure o **destino secundário** na Central de Backup.
 
-### 1. Gerar Backup Manual
+Consulte a documentação completa em [docs/backup.md](file:///c:/DEV/Projetos/pessoal/Site_Gerencial/docs/backup.md).
+
+### 1. Central de Backup na Web (`/configuracoes/backup`)
+- Acesse via navegador ou clicando no **ícone de relógio no rodapé** de qualquer tela.
+- **Gerar Backup Imediato**: Botão "GERAR BACKUP AGORA" cria e valida um dump na hora.
+- **Destino Secundário (Pendrive/Rede)**: Permite configurar uma pasta externa (ex.: `E:\Backups`) e testar a conectividade isoladamente ("Testar destino"). Todo backup gerado é replicado automaticamente para lá.
+- **Lista de Cópias**: Visualização de tamanho, integridade de cada arquivo e status da última restauração.
+
+### 2. Gerar Backup por Linha de Comando ou Script
 Dê dois cliques no script:
 ```cmd
 backup.bat
 ```
-- Na primeira execução, caso o arquivo de credenciais `%USERPROFILE%\.site_gerencial_mysql.cnf` não exista, o script cria um modelo com `user=site_gerencial` e `password=COLOQUE_A_SENHA_AQUI` fora do projeto e orienta o preenchimento da senha real.
+Ou via Artisan:
+```powershell
+php artisan backup:run
+```
 - O dump é gravado em `backups\site_gerencial_AAAA-MM-DD_HHMM.sql`.
-- O script valida que o arquivo gerado possui tamanho maior que 0 bytes e contém a assinatura final `Dump completed`. Caso ocorra qualquer falha, o arquivo parcial é removido automaticamente.
-- A rotação automática mantém os **30 backups mais recentes** na pasta `backups\`.
+- Valida integridade (> 0 bytes, `Dump completed` e presença de todas as 4 tabelas essenciais).
+- A rotação automática mantém os **30 backups mais recentes** na pasta local.
 
-### 2. Agendar Backup Automático Diário (Windows)
+### 3. Agendar Backup Automático Diário (Windows)
 Para agendar o backup diário automático às **20:00** (com `StartWhenAvailable`, executando ao ligar o computador caso tenha perdido o horário):
-1. Clique com o botão direito em `agendar-backup.bat` e selecione **Executar como administrador**.
-2. Ele criará a tarefa `SiteGerencial-Backup` no Agendador de Tarefas do Windows chamando `backup.bat auto` (que registra o histórico em `backups\backup.log`).
-3. Para remover o agendamento a qualquer momento, execute `remover-agendamento.bat` como administrador.
+1. Dê dois cliques em `agendar-backup.bat`.
+2. A tarefa `SiteGerencial-Backup` é registrada na raiz do Agendador de Tarefas do Windows chamando `backup.bat auto` (histórico gravado em `backups\backup.log`).
+3. Para remover o agendamento a qualquer momento, execute `remover-agendamento.bat`.
 
-### 3. Como Verificar o Último Backup
-- **No Dashboard (`/`)**: Uma faixa discreta exibe automaticamente o status do backup mais recente encontrado na pasta configurada (`config/backup.php` / `BACKUP_PATH`):
-  - **Azul (`info`)**: backup feito hoje ou há até 2 dias.
-  - **Amarelo (`warning`)**: último backup entre 3 e 7 dias.
-  - **Vermelho (`danger`)**: último backup há mais de 7 dias ou nenhum arquivo encontrado.
-- **Na pasta `backups\`**: Confira o arquivo `site_gerencial_AAAA-MM-DD_HHMM.sql` mais recente e o registro em `backups\backup.log`.
+### 4. Indicador de Monitoramento no Rodapé
+Todas as páginas contam com um indicador no rodapé exibindo a situação do último backup:
+- **Verde**: Hoje (com horário).
+- **Azul**: Há 1 ou 2 dias.
+- **Amarelo**: Entre 3 e 7 dias.
+- **Vermelho**: Mais de 7 dias ou sem backup.
 
-### 4. Passo a Passo da Restauração e Teste Mensal
+### 5. Restauração pela Interface e Chave de Segurança
+Por segurança estrita contra perda acidental de dados, a restauração via web é **desabilitada por padrão** em todos os ambientes.
 
-> [!WARNING]
-> Recomenda-se **testar a restauração uma vez por mês em um banco separado de teste** (ex.: `site_gerencial_restore_test`) para ter certeza de que os arquivos `.sql` estão íntegros antes de precisar deles em uma emergência.
-
-1. **Testar o arquivo de backup em um banco de teste (recomendado mensalmente)**:
-   ```cmd
-   mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" -e "CREATE DATABASE IF NOT EXISTS site_gerencial_restore_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" site_gerencial_restore_test < backups\site_gerencial_AAAA-MM-DD_HHMM.sql
+**Para habilitar temporariamente:**
+1. No `.env` (ou `.env.demo`), defina:
+   ```env
+   BACKUP_RESTORE_ENABLED=true
    ```
-   Verifique se as tabelas `daily_sales`, `sales_expectations`, `invoices` e `payables` foram carregadas normalmente e depois remova o banco temporário de teste.
-
-2. **Restaurar em caso de necessidade real**:
-   ```cmd
-   mysql --defaults-extra-file="%USERPROFILE%\.site_gerencial_mysql.cnf" site_gerencial < backups\site_gerencial_AAAA-MM-DD_HHMM.sql
+2. Limpe os caches de configuração:
+   ```powershell
+   php artisan config:clear
    ```
+3. Acesse a Central de Backup (`/configuracoes/backup`), clique em **Restaurar** ao lado do backup desejado e digite a palavra `RESTAURAR` em maiúsculas para confirmar.
+4. O sistema cria automaticamente um backup de segurança (`pre-restauracao_...`), restaura o arquivo e executa as migrações pendentes (`php artisan migrate --force`).
+5. Ao concluir a recuperação, desabilite novamente no `.env`:
+   ```env
+   BACKUP_RESTORE_ENABLED=false
+   ```
+   e execute `php artisan config:clear`.
+
+### 6. Atalho no Desktop com Ícone Personalizado
+Para criar um atalho na Área de Trabalho com o ícone oficial da aplicação:
+```cmd
+criar-atalho.bat
+```
+O script gera o atalho `Site Gerencial.lnk` apontando para o servidor local e associado ao ícone multi-resolução `public/icons/site-gerencial.ico`.
 
 ---
 
