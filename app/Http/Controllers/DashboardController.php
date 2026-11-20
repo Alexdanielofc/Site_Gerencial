@@ -6,6 +6,7 @@ use App\Http\Requests\PeriodRequest;
 use App\Models\DailySale;
 use App\Models\Invoice;
 use App\Models\Payable;
+use App\Support\BackupStatus;
 use App\Support\PeriodPills;
 use Illuminate\Contracts\View\View;
 
@@ -77,6 +78,8 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $backupBanner = BackupStatus::banner($today);
+
         return view('index', compact(
             'today',
             'monthStart',
@@ -94,7 +97,8 @@ class DashboardController extends Controller
             'payablePeriodCount',
             'overdueCount',
             'overdueTotalCents',
-            'upcomingPayables'
+            'upcomingPayables',
+            'backupBanner'
         ));
     }
 }

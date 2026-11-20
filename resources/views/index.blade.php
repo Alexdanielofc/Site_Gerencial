@@ -19,6 +19,13 @@
             />
         </header>
 
+        {{-- Faixa discreta de status do último backup --}}
+        @isset($backupBanner)
+            <x-alert :type="$backupBanner['type']">
+                {{ $backupBanner['message'] }}
+            </x-alert>
+        @endisset
+
         {{-- 3 Sections dos Módulos --}}
         <div class="flex flex-col gap-6">
 
