@@ -17,6 +17,18 @@ if "%AUTO_MODE%"=="0" (
     echo.
 )
 
+REM 0) Tentar executar via Laravel Artisan se php estiver disponivel
+where php >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    if "%AUTO_MODE%"=="1" (
+        php artisan backup:run --auto >> "%LOG_FILE%" 2>&1
+    ) else (
+        php artisan backup:run
+    )
+    if !ERRORLEVEL! EQU 0 goto :Success
+    goto :Fail
+)
+
 REM 1) Timestamp via PowerShell (yyyy-MM-dd_HHmm)
 set "TIMESTAMP="
 for /f "usebackq delims=" %%T in (`powershell -NoProfile -Command "Get-Date -Format 'yyyy-MM-dd_HHmm'"`) do set "TIMESTAMP=%%T"

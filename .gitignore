@@ -28,3 +28,5 @@ Homestead.yaml
 Thumbs.db
 image.png
 /backups
+/storage/app/backup-settings.json
+/storage/app/backup-restore-status.json

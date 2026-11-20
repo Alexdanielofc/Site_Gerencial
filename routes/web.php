@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PayableController;
@@ -66,4 +67,12 @@ Route::prefix('modulos')->group(function (): void {
         Route::post('/{payable}/reativar', [PayableController::class, 'reactivate'])->name('payables.reactivate')
             ->whereNumber('payable');
     });
+});
+
+Route::prefix('configuracoes')->group(function (): void {
+    Route::get('/backup', [BackupController::class, 'index'])->name('backup.settings');
+    Route::post('/backup/executar', [BackupController::class, 'run'])->name('backup.run');
+    Route::put('/backup/destino', [BackupController::class, 'updateExtraDestination'])->name('backup.extra.update');
+    Route::post('/backup/destino/testar', [BackupController::class, 'testExtraDestination'])->name('backup.extra.test');
+    Route::delete('/backup/destino', [BackupController::class, 'removeExtraDestination'])->name('backup.extra.remove');
 });
