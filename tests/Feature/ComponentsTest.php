@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\BackupStatus;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 
@@ -180,4 +181,18 @@ it('renders period pills with years, months and extra params', function () {
         ->assertSee('Junho')
         ->assertSee('busca=termo', false)
         ->assertDontSee('vazio=', false);
+});
+
+it('renders backup indicator with correct status and link to backup central', function () {
+    BackupStatus::resetMemoized();
+    config()->set('backup.path', storage_path('framework/testing/non_existent_backups'));
+
+    $this->blade('<x-backup-indicator />')
+        ->assertSee(route('backup.settings'))
+        ->assertSee('Sem backup')
+        ->assertSee('bg-red5', false);
+
+    $this->blade('<x-footer />')
+        ->assertSee(route('backup.settings'))
+        ->assertSee('Sem backup');
 });
