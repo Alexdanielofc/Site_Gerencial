@@ -196,3 +196,24 @@ it('renders backup indicator with correct status and link to backup central', fu
         ->assertSee(route('backup.settings'))
         ->assertSee('Sem backup');
 });
+
+it('renders favicon links in layout and confirms presence of icon assets and shortcut scripts', function () {
+    $this->get(route('site.index'))
+        ->assertOk()
+        ->assertSee('rel="icon" type="image/svg+xml"', false)
+        ->assertSee('rel="alternate icon"', false);
+
+    expect(file_exists(public_path('favicon.svg')))->toBeTrue();
+    expect(file_exists(public_path('favicon.ico')))->toBeTrue();
+    expect(file_exists(public_path('icons/site-gerencial.ico')))->toBeTrue();
+    expect(file_exists(base_path('criar-atalho.bat')))->toBeTrue();
+    expect(file_exists(base_path('scripts/criar-atalho.ps1')))->toBeTrue();
+    expect(file_exists(base_path('scripts/gerar-icone.ps1')))->toBeTrue();
+
+    $criarBat = file_get_contents(base_path('criar-atalho.bat'));
+    expect($criarBat)->toContain('scripts\criar-atalho.ps1');
+
+    $criarPs1 = file_get_contents(base_path('scripts/criar-atalho.ps1'));
+    expect($criarPs1)->toContain('CreateShortcut');
+    expect($criarPs1)->toContain('site-gerencial.ico');
+});
