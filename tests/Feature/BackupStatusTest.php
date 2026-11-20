@@ -40,21 +40,51 @@ it('returns danger banner when backup directory exists but has no backup files',
 });
 
 it('returns info banner when latest backup is from 1 day ago', function () {
-    $this->travelTo(Carbon::create(2026, 6, 15, 14, 0, 0));
+    $tz = 'America/Sao_Paulo';
+    $this->travelTo(Carbon::create(2026, 6, 15, 14, 0, 0, $tz));
     File::makeDirectory($this->tempDir, 0755, true);
     config()->set('backup.path', $this->tempDir);
 
     $file = $this->tempDir.DIRECTORY_SEPARATOR.'site_gerencial_2026-06-14_2000.sql';
     file_put_contents($file, '-- Dump completed');
-    touch($file, Carbon::create(2026, 6, 14, 20, 0, 0)->timestamp);
+    touch($file, Carbon::create(2026, 6, 14, 20, 0, 0, $tz)->timestamp);
 
-    $banner = BackupStatus::banner(Carbon::create(2026, 6, 15));
+    $banner = BackupStatus::banner(Carbon::create(2026, 6, 15, 12, 0, 0, $tz));
     expect($banner['type'])->toBe('info');
-    expect($banner['message'])->toContain('Último backup: há 1 dia');
+    expect($banner['message'])->toContain('Último backup: há 1 dia (14/06/2026 20:00).');
 
     $this->get('/')
         ->assertOk()
         ->assertSee('Último backup: há 1 dia');
+});
+
+it('correctly handles backups late at night or early morning in the application timezone', function () {
+    $tz = 'America/Sao_Paulo';
+    File::makeDirectory($this->tempDir, 0755, true);
+    config()->set('backup.path', $this->tempDir);
+
+    // 1) Backup at 23:30 evaluated at 23:45 on the same day -> hoje (23:30)
+    $file1 = $this->tempDir.DIRECTORY_SEPARATOR.'site_gerencial_2026-06-15_2330.sql';
+    file_put_contents($file1, '-- Dump completed');
+    touch($file1, Carbon::create(2026, 6, 15, 23, 30, 0, $tz)->timestamp);
+
+    $bannerTodayLate = BackupStatus::banner(Carbon::create(2026, 6, 15, 23, 45, 0, $tz));
+    expect($bannerTodayLate['type'])->toBe('info');
+    expect($bannerTodayLate['message'])->toBe('Último backup: hoje (15/06/2026 23:30).');
+
+    // 2) Backup at 23:30 evaluated next day at 00:10 -> há 1 dia
+    $bannerNextDayEarly = BackupStatus::banner(Carbon::create(2026, 6, 16, 0, 10, 0, $tz));
+    expect($bannerNextDayEarly['type'])->toBe('info');
+    expect($bannerNextDayEarly['message'])->toBe('Último backup: há 1 dia (15/06/2026 23:30).');
+
+    // 3) Backup at 00:10 evaluated same day at 08:00 -> hoje (00:10)
+    $file2 = $this->tempDir.DIRECTORY_SEPARATOR.'site_gerencial_2026-06-16_0010.sql';
+    file_put_contents($file2, '-- Dump completed');
+    touch($file2, Carbon::create(2026, 6, 16, 0, 10, 0, $tz)->timestamp);
+
+    $bannerTodayEarly = BackupStatus::banner(Carbon::create(2026, 6, 16, 8, 0, 0, $tz));
+    expect($bannerTodayEarly['type'])->toBe('info');
+    expect($bannerTodayEarly['message'])->toBe('Último backup: hoje (16/06/2026 00:10).');
 });
 
 it('returns warning banner when latest backup is from 5 days ago', function () {

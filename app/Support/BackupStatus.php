@@ -35,7 +35,7 @@ class BackupStatus
         }
 
         return $latestTimestamp !== null
-            ? Carbon::createFromTimestamp($latestTimestamp)
+            ? Carbon::createFromTimestamp($latestTimestamp, config('app.timezone'))
             : null;
     }
 
@@ -53,8 +53,9 @@ class BackupStatus
             ];
         }
 
-        $today = ($today ?? today())->copy()->startOfDay();
-        $latestDay = $latest->copy()->startOfDay();
+        $tz = (string) config('app.timezone');
+        $today = ($today ?? Carbon::now($tz))->copy()->setTimezone($tz)->startOfDay();
+        $latestDay = $latest->copy()->setTimezone($tz)->startOfDay();
         $days = max(0, (int) $latestDay->diffInDays($today, false));
 
         $infoMax = (int) config('backup.info_max_days', 2);
