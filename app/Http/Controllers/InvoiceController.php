@@ -51,12 +51,26 @@ class InvoiceController extends Controller
      */
     public function store(StoreInvoiceRequest $request): RedirectResponse
     {
+        $fromCreate = $request->input('origem') === 'create';
+
         if (! SubmissionGuard::firstTime($request)) {
+            if ($fromCreate) {
+                return redirect()->route('invoices.advanced')
+                    ->with('warning', 'Este registro já foi enviado.');
+            }
+
             return redirect()->route('invoices.index')
                 ->with('warning', 'Este registro já foi enviado.');
         }
 
-        Invoice::create($request->validated());
+        $invoice = Invoice::create($request->validated());
+
+        if ($fromCreate) {
+            return redirect()->route('invoices.advanced', [
+                'ano' => $invoice->issue_date->year,
+                'mes' => $invoice->issue_date->month,
+            ])->with('success', 'Nota fiscal registrada com sucesso.');
+        }
 
         return redirect()->route('invoices.index')
             ->with('success', 'Nota fiscal registrada com sucesso.');
@@ -129,9 +143,14 @@ class InvoiceController extends Controller
     public function edit(Invoice $invoice, Request $request): View
     {
         $today = today();
-        $origin = $request->input('origem', 'advanced');
+        $context = UpdateInvoiceRequest::sanitizeContext($request);
+        $origin = $context['origem'];
+        $contextParams = UpdateInvoiceRequest::advancedRouteParams($request);
+        $backHref = $origin === 'index'
+            ? route('invoices.index')
+            : route('invoices.advanced', $contextParams);
 
-        return view('modules.invoices.edit', compact('invoice', 'today', 'origin'));
+        return view('modules.invoices.edit', compact('invoice', 'today', 'origin', 'context', 'backHref'));
     }
 
     /**
@@ -141,14 +160,12 @@ class InvoiceController extends Controller
     {
         $invoice->update($request->validated());
 
-        $origin = $request->input('origem', 'advanced');
-
-        if ($origin === 'index') {
+        if ($request->validatedOrigin() === 'index') {
             return redirect()->route('invoices.index')
                 ->with('success', 'Nota fiscal atualizada com sucesso.');
         }
 
-        return redirect()->route('invoices.advanced')
+        return redirect()->route('invoices.advanced', $request->validatedContextParams())
             ->with('success', 'Nota fiscal atualizada com sucesso.');
     }
 }

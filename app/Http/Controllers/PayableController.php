@@ -68,12 +68,26 @@ class PayableController extends Controller
      */
     public function store(StorePayableRequest $request): RedirectResponse
     {
+        $fromCreate = $request->input('origem') === 'create';
+
         if (! SubmissionGuard::firstTime($request)) {
+            if ($fromCreate) {
+                return redirect()->route('payables.advanced')
+                    ->with('warning', 'Este registro já foi enviado.');
+            }
+
             return redirect()->route('payables.index')
                 ->with('warning', 'Este registro já foi enviado.');
         }
 
-        Payable::create($request->validated());
+        $payable = Payable::create($request->validated());
+
+        if ($fromCreate) {
+            return redirect()->route('payables.advanced', [
+                'ano' => $payable->due_date->year,
+                'mes' => $payable->due_date->month,
+            ])->with('success', 'Conta a pagar registrada com sucesso.');
+        }
 
         return redirect()->route('payables.index')
             ->with('success', 'Conta a pagar registrada com sucesso.');
@@ -171,9 +185,14 @@ class PayableController extends Controller
     public function edit(Payable $payable, Request $request): View
     {
         $today = today();
-        $origin = $request->input('origem', 'advanced');
+        $context = UpdatePayableRequest::sanitizeContext($request);
+        $origin = $context['origem'];
+        $contextParams = UpdatePayableRequest::advancedRouteParams($request);
+        $backHref = $origin === 'index'
+            ? route('payables.index')
+            : route('payables.advanced', $contextParams);
 
-        return view('modules.payables.edit', compact('payable', 'today', 'origin'));
+        return view('modules.payables.edit', compact('payable', 'today', 'origin', 'context', 'backHref'));
     }
 
     /**
@@ -183,14 +202,12 @@ class PayableController extends Controller
     {
         $payable->update($request->validated());
 
-        $origin = $request->input('origem', 'advanced');
-
-        if ($origin === 'index') {
+        if ($request->validatedOrigin() === 'index') {
             return redirect()->route('payables.index')
                 ->with('success', 'Conta a pagar atualizada com sucesso.');
         }
 
-        return redirect()->route('payables.advanced')
+        return redirect()->route('payables.advanced', $request->validatedContextParams())
             ->with('success', 'Conta a pagar atualizada com sucesso.');
     }
 

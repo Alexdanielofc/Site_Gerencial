@@ -13,6 +13,7 @@
             <form method="POST" action="{{ route('invoices.store') }}" data-loading-text="Salvando..." novalidate>
                 @csrf
                 <input type="hidden" name="_submission_id" value="{{ old('_submission_id', (string) \Illuminate\Support\Str::uuid()) }}">
+                <input type="hidden" name="origem" value="create">
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Data de emissão --}}

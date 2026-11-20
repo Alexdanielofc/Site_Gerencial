@@ -353,3 +353,82 @@ it('does not consume _submission_id when payable validation fails', function () 
 
     expect(Payable::count())->toBe(1);
 });
+
+// ── Contexto de edição e criação (Item 4) ───────────────────────────────────
+
+it('returns to the same past month, status filter, search and page after editing a payable', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $payable = Payable::create([
+        'description' => 'Aluguel Abril',
+        'amount' => '1200.00',
+        'due_date' => '2026-04-10',
+    ]);
+
+    $this->get(route('payables.edit', [
+        'payable' => $payable->id,
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+        'situacao' => 'vencidas',
+        'busca' => 'Aluguel',
+        'page' => 3,
+    ]))
+        ->assertOk()
+        ->assertSee('name="ano" value="2026"', false)
+        ->assertSee('name="mes" value="4"', false)
+        ->assertSee('name="situacao" value="vencidas"', false)
+        ->assertSee('name="busca" value="Aluguel"', false)
+        ->assertSee('name="page" value="3"', false);
+
+    $this->put(route('payables.update', $payable->id), [
+        'description' => 'Aluguel Abril Editado',
+        'amount' => '1250,00',
+        'due_date' => '2026-04-10',
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+        'situacao' => 'vencidas',
+        'busca' => 'Aluguel',
+        'page' => 3,
+    ])->assertRedirect(route('payables.advanced', [
+        'ano' => 2026,
+        'mes' => 4,
+        'busca' => 'Aluguel',
+        'situacao' => 'vencidas',
+        'page' => 3,
+    ]));
+});
+
+it('discards invalid context parameters and unknown origin without 500 error on payable update', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $payable = Payable::create([
+        'description' => 'Conta Segura',
+        'amount' => '100.00',
+        'due_date' => '2026-06-20',
+    ]);
+
+    $this->put(route('payables.update', $payable->id), [
+        'description' => 'Conta Segura Atualizada',
+        'amount' => '110,00',
+        'due_date' => '2026-06-20',
+        'origem' => '//attacker.tld',
+        'ano' => 3000,
+        'mes' => 0,
+        'situacao' => 'inexistente',
+        'page' => 0,
+    ])->assertRedirect(route('payables.advanced'));
+});
+
+it('redirects to advanced view of the created payable month when created from create screen', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $this->post(route('payables.store'), [
+        'description' => 'Seguro Anual',
+        'amount' => '800,00',
+        'due_date' => '2026-08-10',
+        'origem' => 'create',
+    ])->assertRedirect(route('payables.advanced', ['ano' => 2026, 'mes' => 8]))
+        ->assertSessionHas('success');
+});

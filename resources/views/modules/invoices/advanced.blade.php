@@ -114,7 +114,14 @@
                                     </td>
                                     <td class="px-5 py-3 text-right">
                                         <a
-                                            href="{{ route('invoices.edit', ['invoice' => $invoice->id, 'origem' => 'advanced']) }}"
+                                            href="{{ route('invoices.edit', array_filter([
+                                                'invoice' => $invoice->id,
+                                                'origem' => 'advanced',
+                                                'ano' => $monthStart->year,
+                                                'mes' => $monthStart->month,
+                                                'busca' => $search !== '' ? $search : null,
+                                                'page' => $invoices->currentPage() > 1 ? $invoices->currentPage() : null,
+                                            ])) }}"
                                             class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
                                         >
                                             <x-icons.pencil /> EDITAR

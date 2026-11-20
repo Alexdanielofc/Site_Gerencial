@@ -310,3 +310,80 @@ it('does not consume _submission_id when invoice validation fails', function () 
 
     expect(Invoice::count())->toBe(1);
 });
+
+// ── Contexto de edição e criação (Item 4) ───────────────────────────────────
+
+it('returns to the same past month and search after editing an invoice', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $invoice = Invoice::create([
+        'issue_date' => '2026-04-10',
+        'invoice_number' => 'NF-400',
+        'customer_name' => 'Cliente Abril',
+        'amount' => '300.00',
+    ]);
+
+    $this->get(route('invoices.edit', [
+        'invoice' => $invoice->id,
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+        'busca' => 'Abril',
+        'page' => 2,
+    ]))
+        ->assertOk()
+        ->assertSee('name="ano" value="2026"', false)
+        ->assertSee('name="mes" value="4"', false)
+        ->assertSee('name="busca" value="Abril"', false)
+        ->assertSee('name="page" value="2"', false);
+
+    $this->put(route('invoices.update', $invoice->id), [
+        'issue_date' => '2026-04-10',
+        'invoice_number' => 'NF-400',
+        'customer_name' => 'Cliente Abril Editado',
+        'amount' => '350,00',
+        'origem' => 'advanced',
+        'ano' => 2026,
+        'mes' => 4,
+        'busca' => 'Abril',
+        'page' => 2,
+    ])->assertRedirect(route('invoices.advanced', [
+        'ano' => 2026,
+        'mes' => 4,
+        'busca' => 'Abril',
+        'page' => 2,
+    ]));
+});
+
+it('discards invalid context parameters and unknown origin without 500 error on invoice update', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $invoice = Invoice::create([
+        'issue_date' => '2026-06-10',
+        'customer_name' => 'Cliente Seguro',
+        'amount' => '100.00',
+    ]);
+
+    $this->put(route('invoices.update', $invoice->id), [
+        'issue_date' => '2026-06-10',
+        'customer_name' => 'Cliente Seguro Atualizado',
+        'amount' => '120,00',
+        'origem' => 'https://evil.example.com',
+        'ano' => 1900,
+        'mes' => 99,
+        'busca' => str_repeat('x', 150),
+        'page' => -5,
+    ])->assertRedirect(route('invoices.advanced'));
+});
+
+it('redirects to advanced view of the created invoice month when created from create screen', function () {
+    $this->travelTo(Carbon::create(2026, 6, 15));
+
+    $this->post(route('invoices.store'), [
+        'issue_date' => '2026-03-20',
+        'customer_name' => 'Cliente Março',
+        'amount' => '500,00',
+        'origem' => 'create',
+    ])->assertRedirect(route('invoices.advanced', ['ano' => 2026, 'mes' => 3]))
+        ->assertSessionHas('success');
+});

@@ -149,7 +149,15 @@
                                             @endif
 
                                             <a
-                                                href="{{ route('payables.edit', ['payable' => $payable->id, 'origem' => 'advanced']) }}"
+                                                href="{{ route('payables.edit', array_filter([
+                                                    'payable' => $payable->id,
+                                                    'origem' => 'advanced',
+                                                    'ano' => $monthStart->year,
+                                                    'mes' => $monthStart->month,
+                                                    'situacao' => $statusFilter !== 'todas' ? $statusFilter : null,
+                                                    'busca' => $search !== '' ? $search : null,
+                                                    'page' => $payables->currentPage() > 1 ? $payables->currentPage() : null,
+                                                ])) }}"
                                                 class="inline-flex items-center gap-1 text-sm font-medium text-accent transition-colors hover:text-blu5"
                                             >
                                                 <x-icons.pencil /> EDITAR

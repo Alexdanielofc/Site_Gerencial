@@ -3,7 +3,7 @@
         <x-page-header
             title="Editar conta a pagar"
             :description="'Conta: ' . $payable->description"
-            :back-href="$origin === 'index' ? route('payables.index') : route('payables.advanced')"
+            :back-href="$backHref"
             back-label="Voltar"
         />
 
@@ -15,6 +15,11 @@
                 @method('PUT')
 
                 <input type="hidden" name="origem" value="{{ $origin }}">
+                @if ($context['ano']) <input type="hidden" name="ano" value="{{ $context['ano'] }}"> @endif
+                @if ($context['mes']) <input type="hidden" name="mes" value="{{ $context['mes'] }}"> @endif
+                @if ($context['busca']) <input type="hidden" name="busca" value="{{ $context['busca'] }}"> @endif
+                @if ($context['situacao']) <input type="hidden" name="situacao" value="{{ $context['situacao'] }}"> @endif
+                @if ($context['page']) <input type="hidden" name="page" value="{{ $context['page'] }}"> @endif
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Descrição --}}
@@ -107,7 +112,7 @@
                     <x-button type="submit">Atualizar conta</x-button>
                     <x-button
                         variant="secondary"
-                        :href="$origin === 'index' ? route('payables.index') : route('payables.advanced')"
+                        :href="$backHref"
                     >
                         Cancelar
                     </x-button>
