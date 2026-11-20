@@ -64,8 +64,14 @@ if not defined MYSQLDUMP_EXE (
 )
 
 call :Log "Gerando dump do banco 'site_gerencial' em %BACKUP_FILE% ..."
-"%MYSQLDUMP_EXE%" --defaults-extra-file="%CONF_FILE%" --single-transaction --routines --triggers --default-character-set=utf8mb4 site_gerencial > "%BACKUP_FILE%" 2>nul
+"%MYSQLDUMP_EXE%" --defaults-extra-file="%CONF_FILE%" --single-transaction --no-tablespaces --set-gtid-purged=OFF --loose-skip-masking-policies --default-character-set=utf8mb4 site_gerencial > "%BACKUP_FILE%" 2>nul
 set "DUMP_EXIT=%ERRORLEVEL%"
+
+REM Fallback sem --single-transaction caso o usuario MySQL nao possua privilegio global RELOAD/FLUSH_TABLES
+if not "%DUMP_EXIT%"=="0" (
+    "%MYSQLDUMP_EXE%" --defaults-extra-file="%CONF_FILE%" --no-tablespaces --set-gtid-purged=OFF --loose-skip-masking-policies --default-character-set=utf8mb4 site_gerencial > "%BACKUP_FILE%" 2>nul
+    set "DUMP_EXIT=%ERRORLEVEL%"
+)
 
 REM 4) Validar arquivo (> 0 bytes e contendo 'Dump completed')
 powershell -NoProfile -Command ^
