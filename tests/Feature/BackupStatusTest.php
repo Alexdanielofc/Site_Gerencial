@@ -85,3 +85,13 @@ it('returns danger banner when latest backup is from 10 days ago', function () {
     expect($banner['message'])->toContain('Nenhum backup recente');
     expect($banner['message'])->toContain('Execute backup.bat ou agende o backup automático.');
 });
+
+it('ensures backup.bat ends with pause on both success and fail paths in interactive mode and skips pause in auto mode', function () {
+    $script = file_get_contents(base_path('backup.bat'));
+    expect($script)->not->toBeEmpty();
+
+    expect($script)->toContain('goto :Success');
+    expect($script)->toContain('goto :Fail');
+    expect($script)->toMatch('/:Success\s+if "%AUTO_MODE%"=="1" exit \/b 0\s+echo\.\s+pause\s+exit \/b 0/');
+    expect($script)->toMatch('/:Fail\s+if "%AUTO_MODE%"=="1" exit \/b 1\s+echo\.\s+pause\s+exit \/b 1/');
+});
